@@ -1,0 +1,4 @@
+<grid xmax=100 ymax=350 RFAKTOR=1 R1=0.5 deltar=0.5 deltaz=1 RZONE=0 ></grid>
+<inidata roin=1 uphiin=0 uzin=0 urin=0 pin=9 Hr=0.75 Hz=1 Hphi=0 ></inidata>
+<flowSettings Cp=1 kappa=1 sigma=0.67 mu=1 ></flowSettings>
+<options Nsave=5 Nstep=1000 Index=0 Ncomp=8 ></options>
