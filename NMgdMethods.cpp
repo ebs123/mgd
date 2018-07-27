@@ -400,8 +400,7 @@ double*** NMgdMethods::korrectH(const double ***U, const double *hr, const doubl
 	vector<int> sizes(2);
 	sizes[0] = NInitial::get_xmax();
 	sizes[1] = NInitial::get_ymax();
-	int dummy_num = 1;
-	NArrPacker<double> *U_pack = new NArrPacker<double>(dummy_num, sizes, NInitial::getPeriodicName(), NInitial::getSlipName(), (void*)U);
+	NArrPacker<double> *U_pack = new NArrPacker<double>(DUMMY_NUM, sizes, NInitial::getPeriodicName(), NInitial::getSlipName(), (void*)U);
 	double*** U_pack_arr = (double***)U_pack->getPackArr();
 
 	F = new double[NInitial::getNcomp()];

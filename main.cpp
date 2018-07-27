@@ -5,13 +5,7 @@
 #include "includes/NOther.h"
 #endif
 
-//debug
-//#include "includes\NArrPacker.h"
-
-
-//#define Nsave 1000
-//#define Nstep 500000
-//#define Index 0
+#define DUMMY_NUM 1
 using namespace std;
 
 int main(int argc, char **argv)

@@ -402,13 +402,12 @@ void NMethods::get_grad1(const int i, const int j, double ***U, double **grad, c
 	const double *hr, const double *hz)
 {
 	double Sr1[2], Sr2[2], Sz[2], *Uzp1, *Urp1, lambdafrp, lambdafzm, lambdafrm, lambdafzp, vol,
-		*Uzm1, *Urm1, *U1;
+		*Uzm1, *Urm1;
 
 	Uzp1 = new double[NInitial::getNcomp()];
 	Urp1 = new double[NInitial::getNcomp()];
 	Uzm1 = new double[NInitial::getNcomp()];
 	Urm1 = new double[NInitial::getNcomp()];
-	U1 = new double[NInitial::getNcomp()];
 
 	if((i>=0) && (j>=0))
 	{
@@ -624,724 +623,35 @@ void NMethods::get_grad1(const int i, const int j, double ***U, double **grad, c
 		deltarym1=(hr[abs(i)-1]+hr[abs(i-1)-1])*.5;
 	}
 	
-	if((i > -1) & (j > -1) & (i < NInitial::get_xmax()) & (j < NInitial::get_ymax()))
+	vector<int> sizes(2);
+	sizes[0] = NInitial::get_xmax();
+	sizes[1] = NInitial::get_ymax();
+	NArrPacker<double> *U_pack = new NArrPacker<double>(DUMMY_NUM, sizes, NInitial::getPeriodicName(), NInitial::getSlipName(), (void*)U);
+	double*** U_pack_arr = (double***)U_pack->getPackArr();
+
+	for(int k = 0; k <= NInitial::getNcomp() - 1; k++)
 	{
-		for(int k = 0; k <= NInitial::getNcomp() - 1; k++)
-		{
-			if(j != NInitial::get_ymax() - 1)
-				Uzp1[k]=/*U[i][j][k]*(1-lambdafzp)+*/U[i][j+1][k]/**lambdafzp*/;
-			else
-			{
-				double *Ust, *U1z;
-				NMgdBoundaryCond *bound = new NMgdBoundaryCond;
+		Uzp1[k]=/*U[i][j][k]*(1-lambdafzp)+*/U_pack_arr[i + dummy_num][j + 1 + dummy_num][k]/**lambdafzp*/;
 
-				Ust = new double[NInitial::getNcomp()];
-				U1z = new double[NInitial::getNcomp()];
+		Uzm1[k]=/*U[i][j][k]*(1-lambdafzm)+*/U_pack_arr[i + dummy_num][j - 1 + dummy_num][k]/**lambdafzm*/;
 
-				for(int l = 0; l <= NInitial::getNcomp() - 1; l++)
-					Ust[l]=U[i][j][l];
+		Urp1[k]=/*U[i][j][k]*(1-lambdafrp)+*/U_pack_arr[i + 1  + dummy_num][j + dummy_num][k]/**lambdafrp*/;
 
-				if(bz == "slip")
-					bound->slip(Ust, U1z, "z");
-				else if(bz == "per")
-					bound->periodic(i, j, U, U1z, "z");
-				else
-					bound->inflow(i, NInitial::get_pin(), NInitial::get_roin(), NInitial::get_urin(), NInitial::get_uzin(), NInitial::get_uphiin(), U1z, hr);
-
-				Uzp1[k]=/*U[i][j][k]*(1-lambdafzp)+*/U1z[k]/**lambdafzp*/;
-
-				delete bound;
-				delete []Ust;
-				delete []U1z;
-			}
-
-			if(j!=0)
-				Uzm1[k]=/*U[i][j][k]*(1-lambdafzm)+*/U[i][j-1][k]/**lambdafzm*/;
-			else
-			{
-				double *Ust, *U1z;
-				NMgdBoundaryCond *bound = new NMgdBoundaryCond;
-
-				Ust = new double[NInitial::getNcomp()];
-				U1z = new double[NInitial::getNcomp()];
-
-				for(int l = 0; l <= NInitial::getNcomp() - 1; l++)
-					Ust[l]=U[i][j][l];
-
-				if(bz == "slip")
-					bound->slip(Ust, U1z, "z");
-				else if(bz=="per")
-					bound->periodic(i,j,const_cast<double***>(U),U1z,"z");
-				else
-					bound->outflow(Ust,U1z);
-
-
-				Uzm1[k]=/*U[i][j][k]*(1-lambdafzm)+*/U1z[k]/**lambdafzm*/;
-
-				delete bound;
-				delete []Ust;
-				delete []U1z;
-			}
-
-			if(i != NInitial::get_xmax() - 1)
-				Urp1[k]=/*U[i][j][k]*(1-lambdafrp)+*/U[i+1][j][k]/**lambdafrp*/;
-			else
-			{
-				double *Ust, *U1r;
-				NMgdBoundaryCond *bound = new NMgdBoundaryCond;
-
-				Ust = new double[NInitial::getNcomp()];
-				U1r = new double[NInitial::getNcomp()];
-
-				for(int l = 0; l <= NInitial::getNcomp() - 1; l++)
-					Ust[l]=U[i][j][l];
-
-				if(br == "slip")
-					bound->slip(Ust, U1r, "r");
-				else
-					bound->periodic(i, j, U, U1r, "r");
-
-				Urp1[k]=/*U[i][j][k]*(1-lambdafrp)+*/U1r[k]/**lambdafrp*/;
-
-				delete bound;
-				delete []Ust;
-				delete []U1r;
-			}
-
-			if(i!=0)
-				Urm1[k]=/*U[i][j][k]*(1-lambdafrm)+*/U[i-1][j][k]/**lambdafrm*/;
-			else
-			{
-				double *Ust, *U1r;
-				NMgdBoundaryCond *bound = new NMgdBoundaryCond;
-
-				Ust = new double[NInitial::getNcomp()];
-				U1r = new double[NInitial::getNcomp()];
-
-				for(int l = 0; l <= NInitial::getNcomp() - 1; l++)
-					Ust[l]=U[i][j][l];
-
-				if(br=="slip")
-					bound->slipinner(Ust, U1r);
-				else
-					bound->periodic(i, j, U, U1r, "r");
-
-
-				Urm1[k]=/*U[i][j][k]*(1-lambdafrm)+*/U1r[k]/**lambdafrm*/;
-
-				delete bound;
-				delete []Ust;
-				delete []U1r;
-			}
-		}
-
-		for(int k = 0; k < NInitial::getNcomp(); k++)
-		{
-			grad[0][k]=(wyp1*pow(deltaryp1,2)*(Urp1[k]-U[i][j][k])-wym1*pow(deltarym1,2)*(Urm1[k]-U[i][j][k]))/
-				(wyp1*pow(deltaryp1,2)+wym1*pow(deltarym1,2));
-			grad[1][k]=(wxp1*pow(deltarxp1,2)*(Uzp1[k]-U[i][j][k])-wxm1*pow(deltarxm1,2)*(Uzm1[k]-U[i][j][k]))/
-				(wxp1*pow(deltarxp1,2)+wxm1*pow(deltarxm1,2));
-		}
-	}
-//center cell-----------------------------------	
-
-	double *U1adjrp, *U1adjzp, *U1adjzm, *U1adjrm;
-
-	U1adjrp = new double[NInitial::getNcomp()];
-	U1adjzp = new double[NInitial::getNcomp()];
-	U1adjzm = new double[NInitial::getNcomp()];
-	U1adjrm = new double[NInitial::getNcomp()];
-
-	NMgdBoundaryCond *bound = new NMgdBoundaryCond;
-
-	if((i < 0) & (j > -1) & (j < NInitial::get_ymax()))
-	{
-		if(br == "slip")
-			bound->slipinner(U[abs(i)-1][j], U1);
-		else
-			bound->periodic(abs(i) - 1, j, U, U1, "r");
-
-
-		if((i + 1) < 0)
-		{
-			if(br == "slip")
-				bound->slipinner(U[abs(i + 1) - 1][j], U1adjrp);
-			else
-				bound->periodic(abs(i + 1) - 1, j, U, U1adjrp, "r");
-		}
-		else
-			for(int l = 0; l < NInitial::getNcomp(); l++)
-				U1adjrp[l]=U[i + 1][j][l];
-
-
-
-		if(br=="slip")
-			bound->slipinner(U[abs(i-1)-1][j],U1adjrm);
-		else
-			bound->periodic(abs(i-1)-1,j,const_cast<double***>(U),U1adjrm,"r");
-
-
-		if((j+1) < NInitial::get_ymax())
-		{
-			if(br=="slip")
-				bound->slipinner(U[abs(i)-1][j+1],U1adjzp);
-			else
-				bound->periodic(abs(i)-1,j+1,const_cast<double***>(U),U1adjzp,"r");
-		}
-		else
-		{
-			if(br=="slip")
-				bound->slipinner(U[abs(i)-1][2*NInitial::get_ymax()-j-2],U1adjzp);
-			else
-				bound->periodic(abs(i)-1,2*NInitial::get_ymax()-j-2,const_cast<double***>(U),U1adjzp,"r");
-
-		}
-
-
-		if((j-1) > -1)
-		{
-			if(br=="slip")
-				bound->slipinner(U[abs(i)-1][j-1],U1adjzm);
-			else
-				bound->periodic(abs(i)-1,j-1,const_cast<double***>(U),U1adjzm,"r");
-		}
-		else
-		{
-			if(br=="slip")
-				bound->slipinner(U[abs(i)-1][abs(j-1)-1],U1adjzm);
-			else
-				bound->periodic(abs(i)-1,abs(j-1)-1,const_cast<double***>(U),U1adjzm,"r");
-		}
-
-
-		for(int k = 0; k <= NInitial::getNcomp() - 1; k++)
-		{
-			grad[0][k]=(wyp1*pow(deltaryp1,2)*(U1adjrp[k]-U1[k])-wym1*pow(deltarym1,2)*(U1adjrm[k]-U1[k]))/
-				(wyp1*pow(deltaryp1,2)+wym1*pow(deltarym1,2));
-			grad[1][k]=(wxp1*pow(deltarxp1,2)*(U1adjzp[k]-U1[k])-wxm1*pow(deltarxm1,2)*(U1adjzm[k]-U1[k]))/
-				(wxp1*pow(deltarxp1,2)+wxm1*pow(deltarxm1,2));
-
-						//Uzp1[k]=U1[k]*(1-lambdafzp)+U1adjzp[k]*lambdafzp;
-						//Uzm1[k]=U1[k]*(1-lambdafzm)+U1adjzm[k]*lambdafzm;
-						//Urp1[k]=U1[k]*(1-lambdafrp)+U1adjrp[k]*lambdafrp;
-						//Urm1[k]=U1[k]*(1-lambdafrm)+U1adjrm[k]*lambdafrm;
-		}
-	}
-	else if((i < 0) & (j < 0))
-	{
-		if(br == "slip")
-			bound->slipinner(U[abs(i) - 1][abs(j) - 1], U1);
-		else
-			bound->periodic(abs(i) - 1, abs(j) - 1, U, U1, "r");
-
-		if((i + 1) < 0)
-		{
-			if(br=="slip")
-				bound->slipinner(U[abs(i+1)-1][abs(j)-1],U1adjrp);
-			else
-				bound->periodic(abs(i+1)-1,abs(j)-1,const_cast<double***>(U),U1adjrp,"r");
-		}
-		else
-		{
-			if(bz=="slip")
-				bound->slip(U[i+1][abs(j)-1],U1adjrp,"z");
-			else if(bz=="per")
-				bound->periodic(i+1,abs(j)-1,const_cast<double***>(U),U1adjrp,"z");
-			else
-				bound->outflow(U[i+1][abs(j)-1],U1adjrp);
-		}
-
-
-		if((j+1) < 0)
-		{
-			if(br=="slip")
-				bound->slipinner(U[abs(i)-1][abs(j+1)-1],U1adjzp);
-			else
-				bound->periodic(abs(i)-1,abs(j+1)-1,const_cast<double***>(U),U1adjzp,"r");
-		}
-		else
-		{
-			if(br=="slip")
-				bound->slipinner(U[abs(i)-1][j+1],U1adjzp);
-			else
-				bound->periodic(abs(i)-1,j+1,const_cast<double***>(U),U1adjzp,"r");
-		}
-
-
-		if(br=="slip")
-			bound->slipinner(U[abs(i)-1][abs(j-1)-1],U1adjzm);
-		else
-			bound->periodic(abs(i)-1,abs(j-1)-1,const_cast<double***>(U),U1adjzm,"r");
-
-					
-		if(br=="slip")
-			bound->slipinner(U[abs(i-1)-1][abs(j)-1],U1adjrm);
-		else
-			bound->periodic(abs(i-1)-1,abs(j)-1,const_cast<double***>(U),U1adjrm,"r");
-
-
-		for(int k = 0; k <= NInitial::getNcomp() - 1; k++)
-		{
-			grad[0][k]=(wyp1*pow(deltaryp1,2)*(U1adjrp[k]-U1[k])-wym1*pow(deltarym1,2)*(U1adjrm[k]-U1[k]))/
-				(wyp1*pow(deltaryp1,2)+wym1*pow(deltarym1,2));
-			grad[1][k]=(wxp1*pow(deltarxp1,2)*(U1adjzp[k]-U1[k])-wxm1*pow(deltarxm1,2)*(U1adjzm[k]-U1[k]))/
-				(wxp1*pow(deltarxp1,2)+wxm1*pow(deltarxm1,2));
-
-						//Uzp1[k]=U1[k]*(1-lambdafzp)+U1adjzp[k]*lambdafzp;
-						//Uzm1[k]=U1[k]*(1-lambdafzm)+U1adjzm[k]*lambdafzm;
-						//Urp1[k]=U1[k]*(1-lambdafrp)+U1adjrp[k]*lambdafrp;
-						//Urm1[k]=U1[k]*(1-lambdafrm)+U1adjrm[k]*lambdafrm;
-		}
-	}
-	else if((i < 0) & (j > NInitial::get_ymax() - 1))
-	{
-		if(br == "slip")
-			bound->slipinner(U[abs(i) - 1][2 * NInitial::get_ymax() - j - 1], U1);
-		else
-			bound->periodic(abs(i) - 1, 2 * NInitial::get_ymax() - j - 1, U, U1, "r");
-
-		if((j - 1) > (NInitial::get_ymax() - 1))
-		{
-			if(br == "slip")
-				bound->slipinner(U[abs(i) - 1][2 * NInitial::get_ymax() - j], U1adjzm);
-			else
-				bound->periodic(abs(i) - 1, 2 * NInitial::get_ymax() - j, U, U1adjzm, "r");
-		}
-		else
-		{
-			if(br == "slip")
-				bound->slipinner(U[abs(i) - 1][j - 1], U1adjzm);
-			else
-				bound->periodic(abs(i) - 1, j - 1, U, U1adjzm, "r");
-		}
-
-		if((i + 1) < 0)
-		{
-			if(br == "slip")
-				bound->slipinner(U[abs(i + 1) - 1][2 * NInitial::get_ymax() - j - 1], U1adjrp);
-			else
-				bound->periodic(abs(i + 1) - 1, 2 * NInitial::get_ymax() - j - 1, U, U1adjrp, "r");
-		}
-		else
-		{
-			if(bz == "slip")
-				bound->slip(U[i + 1][2 * NInitial::get_ymax() - j - 1], U1adjrp, "z");
-			else if(bz == "per")
-				bound->periodic(i + 1, 2 * NInitial::get_ymax() - j - 1, U, U1adjrp, "z");
-			else
-				bound->inflow(i + 1, NInitial::get_pin(), NInitial::get_roin(), NInitial::get_urin(), NInitial::get_uzin(), NInitial::get_uphiin(), U1adjrp, hr);
-		}
-		
-		if(br == "slip")
-			bound->slipinner(U[abs(i) - 1][2 * NInitial::get_ymax() - j - 2], U1adjzp);
-		else
-			bound->periodic(abs(i) - 1, 2 * NInitial::get_ymax() - j - 2, U, U1adjzp, "r");
-		
-		if(br == "slip")
-			bound->slipinner(U[abs(i - 1) - 1][2 * NInitial::get_ymax() - j - 1], U1adjrm);
-		else
-			bound->periodic(abs(i - 1) - 1, 2 * NInitial::get_ymax() - j - 1, U, U1adjrm, "r");
-
-
-		for(int k =0 ; k <= NInitial::getNcomp() - 1; k++)
-		{
-			grad[0][k]=(wyp1*pow(deltaryp1,2)*(U1adjrp[k]-U1[k])-wym1*pow(deltarym1,2)*(U1adjrm[k]-U1[k]))/
-				(wyp1*pow(deltaryp1,2)+wym1*pow(deltarym1,2));
-			grad[1][k]=(wxp1*pow(deltarxp1,2)*(U1adjzp[k]-U1[k])-wxm1*pow(deltarxm1,2)*(U1adjzm[k]-U1[k]))/
-				(wxp1*pow(deltarxp1,2)+wxm1*pow(deltarxm1,2));
-			
-			//Uzp1[k]=U1[k]*(1-lambdafzp)+U1adjzp[k]*lambdafzp;
-						//Uzm1[k]=U1[k]*(1-lambdafzm)+U1adjzm[k]*lambdafzm;
-						//Urp1[k]=U1[k]*(1-lambdafrp)+U1adjrp[k]*lambdafrp;
-						//Urm1[k]=U1[k]*(1-lambdafrm)+U1adjrm[k]*lambdafrm;
-		}
-	}
-	else if((i > -1) & (i < NInitial::get_xmax()) & (j > NInitial::get_ymax() - 1))
-	{
-		if(bz == "slip")
-			bound->slip(U[i][2 * NInitial::get_ymax() - j - 1], U1, "z");
-		else if(bz == "per")
-			bound->periodic(i, 2 * NInitial::get_ymax() - j - 1, U, U1, "z");
-		else
-			bound->inflow(i, NInitial::get_pin(), NInitial::get_roin(), NInitial::get_urin(), NInitial::get_uzin(), NInitial::get_uphiin(), U1, hr);
-
-		if((j - 1) > (NInitial::get_ymax() - 1))
-		{
-			if(bz == "slip")
-				bound->slip(U[i][2 * NInitial::get_ymax() - j], U1adjzm, "z");
-			else if(bz == "per")
-				bound->periodic(i, 2 * NInitial::get_ymax() - j, U, U1adjzm, "z");
-			else
-				bound->inflow(i, NInitial::get_pin(), NInitial::get_roin(), NInitial::get_urin(), NInitial::get_uzin(), NInitial::get_uphiin(), U1adjzm, hr);
-		}
-		else
-			for(int l = 0; l < NInitial::getNcomp(); l++)
-				U1adjzm[l]=U[i][j-1][l];
-
-		if((i + 1) < NInitial::get_xmax())
-		{
-			if(bz == "slip")
-				bound->slip(U[i + 1][2 * NInitial::get_ymax() - j - 1], U1adjrp, "z");
-			else if(bz == "per")
-				bound->periodic(i + 1, 2 * NInitial::get_ymax() - j - 1, U, U1adjrp, "z");
-			else
-				bound->inflow(i + 1, NInitial::get_pin(), NInitial::get_roin(), NInitial::get_urin(), NInitial::get_uzin(), NInitial::get_uphiin(), U1adjrp, hr);
-		}
-		else
-		{
-			if(br == "slip")
-				bound->slip(U[2 * NInitial::get_xmax() - i - 2][2 * NInitial::get_ymax() - j - 1], U1adjrp, "r");
-			else
-				bound->periodic(2 * NInitial::get_xmax() - i - 2, 2 * NInitial::get_ymax() - j - 1, U, U1adjrp, "r");
-		}
-
-
-		if((i - 1) > -1)
-		{
-			if(bz == "slip")
-				bound->slip(U[i - 1][2 * NInitial::get_ymax() - j - 1], U1adjrm, "z");
-			else if(bz == "per")
-				bound->periodic(i - 1, 2 * NInitial::get_ymax() - j - 1, U, U1adjrm, "z");
-			else
-				bound->inflow(i - 1, NInitial::get_pin(), NInitial::get_roin(), NInitial::get_urin(), NInitial::get_uzin(), NInitial::get_uphiin(), U1adjrm, hr);
-		}
-		else
-		{
-			if(br == "slip")
-				bound->slip(U[abs(i - 1) - 1][2 * NInitial::get_ymax() - j - 1], U1adjrm, "r");
-			else
-				bound->periodic(abs(i - 1) - 1, 2 * NInitial::get_ymax() - j - 1, U, U1adjrm, "r");
-		}
-		
-		if(bz == "slip")
-			bound->slip(U[i][2 * NInitial::get_ymax() - j - 2], U1adjzp, "z");
-		else if(bz == "per")
-			bound->periodic(i, 2 * NInitial::get_ymax() - j - 2, U, U1adjzp, "z");
-		else
-			bound->inflow(i, NInitial::get_pin(), NInitial::get_roin(), NInitial::get_urin(), NInitial::get_uzin(), NInitial::get_uphiin(), U1adjzp, hr);
-
-
-		for(int k = 0; k <= NInitial::getNcomp() - 1; k++)
-		{
-			grad[0][k]=(wyp1*pow(deltaryp1,2)*(U1adjrp[k]-U1[k])-wym1*pow(deltarym1,2)*(U1adjrm[k]-U1[k]))/
-				(wyp1*pow(deltaryp1,2)+wym1*pow(deltarym1,2));
-			grad[1][k]=(wxp1*pow(deltarxp1,2)*(U1adjzp[k]-U1[k])-wxm1*pow(deltarxm1,2)*(U1adjzm[k]-U1[k]))/
-				(wxp1*pow(deltarxp1,2)+wxm1*pow(deltarxm1,2));
-
-						//Uzp1[k]=U1[k]*(1-lambdafzp)+U1adjzp[k]*lambdafzp;
-						//Uzm1[k]=U1[k]*(1-lambdafzm)+U1adjzm[k]*lambdafzm;
-						//Urp1[k]=U1[k]*(1-lambdafrp)+U1adjrp[k]*lambdafrp;
-						//Urm1[k]=U1[k]*(1-lambdafrm)+U1adjrm[k]*lambdafrm;
-		}
-	}
-	else if((i > NInitial::get_xmax() - 1) & (j > NInitial::get_ymax() - 1))
-	{
-		if(br == "slip")
-			bound->slip(U[2 * NInitial::get_xmax() - i - 1][2 * NInitial::get_ymax() - j - 1], U1, "r");
-		else
-			bound->periodic(2 * NInitial::get_xmax() - i - 1, 2 * NInitial::get_ymax() - j - 1, U, U1, "r");
-					
-		if((j - 1) > (NInitial::get_ymax() - 1))
-		{
-			if(br == "slip")
-				bound->slip(U[2 * NInitial::get_xmax() - i - 1][2 * NInitial::get_ymax() - j], U1adjzm, "r");
-			else
-				bound->periodic(2 * NInitial::get_xmax() - i - 1, 2 * NInitial::get_ymax() - j, U, U1adjzm, "r");
-		}
-		else
-		{
-			if(br == "slip")
-				bound->slip(U[2 * NInitial::get_xmax() - i - 1][j - 1], U1adjzm, "r");
-			else
-				bound->periodic(2 * NInitial::get_xmax() - i - 1, j - 1, U, U1adjzm, "r");
-		}
-
-
-		if((i - 1) > (NInitial::get_xmax() - 1))
-		{
-			if(br == "slip")
-				bound->slip(U[2 * NInitial::get_xmax() - i - 2][2 * NInitial::get_ymax() - j - 1], U1adjrm, "r");
-			else
-				bound->periodic(2 * NInitial::get_xmax() - i - 2, 2 * NInitial::get_ymax() - j - 1, U, U1adjrm, "r");
-		}
-		else
-		{
-			if(bz == "slip")
-				bound->slip(U[i - 1][2 * NInitial::get_ymax() - j - 1], U1adjrm, "z");
-			else if(bz == "per")
-				bound->periodic(i - 1,2 * NInitial::get_ymax() - j - 1, U, U1adjrm, "z");
-			else
-				bound->inflow(i - 1, NInitial::get_pin(), NInitial::get_roin(), NInitial::get_urin(), NInitial::get_uzin(), NInitial::get_uphiin(), U1adjrm, hr);
-		}
-
-
-		if(br == "slip")
-			bound->slip(U[2 * NInitial::get_xmax() - i - 1][2 * NInitial::get_ymax() - j - 2], U1adjzp, "r");
-		else
-			bound->periodic(2 * NInitial::get_xmax() - i - 1, 2 * NInitial::get_ymax() - j - 2, U, U1adjzp, "r");
-
-		if(br == "slip")
-			bound->slip(U[2 * NInitial::get_xmax() - i - 2][2 * NInitial::get_ymax() - j - 1], U1adjrp, "r");
-		else
-			bound->periodic(2 * NInitial::get_xmax() - i - 2, 2 * NInitial::get_ymax() - j - 1, U, U1adjrp, "r");
-
-
-
-		for(int k = 0; k <= NInitial::getNcomp() - 1; k++)
-		{
-			grad[0][k]=(wyp1*pow(deltaryp1,2)*(U1adjrp[k]-U1[k])-wym1*pow(deltarym1,2)*(U1adjrm[k]-U1[k]))/
-				(wyp1*pow(deltaryp1,2)+wym1*pow(deltarym1,2));
-			grad[1][k]=(wxp1*pow(deltarxp1,2)*(U1adjzp[k]-U1[k])-wxm1*pow(deltarxm1,2)*(U1adjzm[k]-U1[k]))/
-				(wxp1*pow(deltarxp1,2)+wxm1*pow(deltarxm1,2));
-
-			//Uzp1[k]=U1[k]*(1-lambdafzp)+U1adjzp[k]*lambdafzp;
-						//Uzm1[k]=U1[k]*(1-lambdafzm)+U1adjzm[k]*lambdafzm;
-						//Urp1[k]=U1[k]*(1-lambdafrp)+U1adjrp[k]*lambdafrp;
-						//Urm1[k]=U1[k]*(1-lambdafrm)+U1adjrm[k]*lambdafrm;
-		}
-
-
-	}
-	else if((i > NInitial::get_xmax() - 1) & (j < NInitial::get_ymax()) & (j > -1))
-	{
-		if(br == "slip")
-			bound->slip(U[2 * NInitial::get_xmax() - i - 1][j], U1, "r");
-		else
-			bound->periodic(2 * NInitial::get_xmax() - i - 1, j, U, U1, "r");
-
-		if((j + 1) < NInitial::get_ymax())
-		{
-			if(br == "slip")
-				bound->slip(U[2 * NInitial::get_xmax() - i - 1][j + 1], U1adjzp, "r");
-			else
-				bound->periodic(2 * NInitial::get_xmax() - i - 1, j + 1, U, U1adjzp, "r");
-		}
-		else
-		{
-			if(br == "slip")
-				bound->slip(U[2 * NInitial::get_xmax() - i - 1][2 * NInitial::get_ymax() - j - 2], U1adjzp, "r");
-			else
-				bound->periodic(2 * NInitial::get_xmax() - i - 1,2 * NInitial::get_ymax() - j - 2, U, U1adjzp, "r");
-		}
-
-		if((j - 1) > -1)
-		{
-			if(br == "slip")
-				bound->slip(U[2 * NInitial::get_xmax() - i - 1][j - 1], U1adjzm, "r");
-			else
-				bound->periodic(2 * NInitial::get_xmax() - i - 1, j - 1, U, U1adjzm, "r");
-		}
-		else
-		{
-			if(br == "slip")
-				bound->slip(U[2 * NInitial::get_xmax() - i - 1][abs(j - 1) - 1], U1adjzm, "r");
-			else
-				bound->periodic(2 * NInitial::get_xmax() - i - 1, abs(j - 1) - 1, U, U1adjzm, "r");
-		}
-
-		if((i-1) > (NInitial::get_xmax() - 1))
-		{
-			if(br=="slip")
-				bound->slip(U[2 * NInitial::get_xmax() - i][j], U1adjrm, "r");
-			else
-				bound->periodic(2 * NInitial::get_xmax() - i, j, U, U1adjrm, "r");
-		}
-		else
-			for(int l = 0; l < NInitial::getNcomp(); l++)
-				U1adjrm[l]=U[NInitial::get_xmax() - 1][j][l];
-
-		if(br=="slip")
-			bound->slip(U[2 * NInitial::get_xmax() - i - 2][j], U1adjrp, "r");
-		else
-			bound->periodic(2 * NInitial::get_xmax() - i - 2, j, U, U1adjrp, "r");
-
-
-
-		for(int k = 0; k <= NInitial::getNcomp() - 1; k++)
-		{
-			grad[0][k]=(wyp1*pow(deltaryp1,2)*(U1adjrp[k]-U1[k])-wym1*pow(deltarym1,2)*(U1adjrm[k]-U1[k]))/
-				(wyp1*pow(deltaryp1,2)+wym1*pow(deltarym1,2));
-			grad[1][k]=(wxp1*pow(deltarxp1,2)*(U1adjzp[k]-U1[k])-wxm1*pow(deltarxm1,2)*(U1adjzm[k]-U1[k]))/
-				(wxp1*pow(deltarxp1,2)+wxm1*pow(deltarxm1,2));
-
-						//Uzp1[k]=U1[k]*(1-lambdafzp)+U1adjzp[k]*lambdafzp;
-						//Uzm1[k]=U1[k]*(1-lambdafzm)+U1adjzm[k]*lambdafzm;
-						//Urp1[k]=U1[k]*(1-lambdafrp)+U1adjrp[k]*lambdafrp;
-						//Urm1[k]=U1[k]*(1-lambdafrm)+U1adjrm[k]*lambdafrm;
-		}
-
-
-	}
-	else if((i > NInitial::get_xmax() - 1) & (j < 0))
-	{
-		if(br == "slip")
-			bound->slip(U[2 * NInitial::get_xmax() - i - 1][abs(j) - 1], U1, "r");
-		else
-			bound->periodic(2 * NInitial::get_xmax() - i - 1, abs(j) - 1, U, U1, "r");
-
-		if((j+1) < 0)
-		{
-			if(br=="slip")
-				bound->slip(U[2*NInitial::get_xmax()-i-1][abs(j+1)-1],U1adjzp,"r");
-			else
-				bound->periodic(2*NInitial::get_xmax()-i-1,abs(j+1)-1,const_cast<double***>(U),U1adjzp,"r");
-		}
-		else
-		{
-			if(br=="slip")
-				bound->slip(U[2*NInitial::get_xmax()-i-1][j+1],U1adjzp,"r");
-			else
-				bound->periodic(2*NInitial::get_xmax()-i-1,j+1,const_cast<double***>(U),U1adjzp,"r");
-		}
-
-					
-		if((i-1) > (NInitial::get_xmax()-1))
-		{
-			if(br=="slip")
-				bound->slip(U[2*NInitial::get_xmax()-i][abs(j)-1],U1adjrm,"r");
-			else
-				bound->periodic(2*NInitial::get_xmax()-i,abs(j)-1,const_cast<double***>(U),U1adjrm,"r");
-		}
-		else
-		{
-			if(bz=="slip")
-				bound->slip(U[i-1][abs(j)-1],U1adjrm,"z");
-			else if(bz=="per")
-				bound->periodic(i-1,abs(j)-1,const_cast<double***>(U),U1adjrm,"z");
-			else
-				bound->outflow(U[0][abs(j)-1],U1adjrm);
-		}
-
-
-		if(br=="slip")
-			bound->slip(U[2*NInitial::get_xmax()-i-2][abs(j)-1],U1adjrp,"r");
-		else
-			bound->periodic(2*NInitial::get_xmax()-i-2,abs(j)-1,const_cast<double***>(U),U1adjrp,"r");
-		
-		if(br=="slip")
-			bound->slip(U[2*NInitial::get_xmax()-i-1][abs(j-1)-1],U1adjzm,"r");
-		else
-			bound->periodic(2*NInitial::get_xmax()-i-1,abs(j-1)-1,const_cast<double***>(U),U1adjzm,"r");
-
-
-		for(int k=0;k<=NInitial::getNcomp()-1;k++)
-		{
-			grad[0][k]=(wyp1*pow(deltaryp1,2)*(U1adjrp[k]-U1[k])-wym1*pow(deltarym1,2)*(U1adjrm[k]-U1[k]))/
-				(wyp1*pow(deltaryp1,2)+wym1*pow(deltarym1,2));
-			grad[1][k]=(wxp1*pow(deltarxp1,2)*(U1adjzp[k]-U1[k])-wxm1*pow(deltarxm1,2)*(U1adjzm[k]-U1[k]))/
-				(wxp1*pow(deltarxp1,2)+wxm1*pow(deltarxm1,2));
-			
-			//Uzp1[k]=U1[k]*(1-lambdafzp)+U1adjzp[k]*lambdafzp;
-						//Uzm1[k]=U1[k]*(1-lambdafzm)+U1adjzm[k]*lambdafzm;
-						//Urp1[k]=U1[k]*(1-lambdafrp)+U1adjrp[k]*lambdafrp;
-						//Urm1[k]=U1[k]*(1-lambdafrm)+U1adjrm[k]*lambdafrm;
-		}
-
-
-	}
-	else if((i<NInitial::get_xmax()) && (i>-1) && (j<0))
-	{
-		if(bz=="slip")
-			bound->slip(U[i][abs(j)-1],U1,"z");
-		else if(bz=="per")
-			bound->periodic(i,abs(j)-1,const_cast<double***>(U),U1,"z");
-		else
-			bound->outflow(U[i][0],U1);
-
-
-		if((j+1) < 0)
-		{
-			if(bz=="slip")
-				bound->slip(U[i][abs(j+1)-1],U1adjzp,"z");
-			else if(bz=="per")
-				bound->periodic(i,abs(j+1)-1,const_cast<double***>(U),U1adjzp,"z");
-			else
-				bound->outflow(U[i][0],U1adjzp);
-		}
-		else
-			for(int l=0;l<NInitial::getNcomp();l++)
-				U1adjzp[l]=U[i][j+1][l];
-
-
-		if((i-1) > -1)
-		{
-			if(bz=="slip")
-				bound->slip(U[i-1][abs(j)-1],U1adjrm,"z");
-			else if(bz=="per")
-				bound->periodic(i-1,abs(j)-1,const_cast<double***>(U),U1adjrm,"z");
-			else
-				bound->outflow(U[i-1][0],U1adjrm);
-		}
-		else
-		{
-			if(br=="slip")
-				bound->slipinner(U[abs(i-1)-1][abs(j)-1],U1adjrm);
-			else
-				bound->periodic(abs(i-1)-1,abs(j)-1,const_cast<double***>(U),U1adjrm,"r");
-		}
-
-
-		if((i+1) < NInitial::get_xmax())
-		{
-			if(bz=="slip")
-				bound->slip(U[i+1][abs(j)-1],U1adjrp,"z");
-			else if(bz=="per")
-				bound->periodic(i+1,abs(j)-1,const_cast<double***>(U),U1adjrp,"z");
-			else
-				bound->outflow(U[i+1][0],U1adjrp);
-		}
-		else
-		{
-			if(br=="slip")
-				bound->slip(U[2*NInitial::get_xmax()-i-2][abs(j)-1],U1adjrp,"r");
-			else
-				bound->periodic(2*NInitial::get_xmax()-i-2,abs(j)-1,const_cast<double***>(U),U1adjrp,"r");
-		}	
-
-
-		if(bz=="slip")
-			bound->slip(U[i][abs(j-1)-1],U1adjzm,"z");
-		else if(bz=="per")
-			bound->periodic(i,abs(j-1)-1,const_cast<double***>(U),U1adjzm,"z");
-		else
-			bound->outflow(U[i][0],U1adjzm);
-
-				//for(int l=0;l<Ncomp;l++)
-				//{
-				//	if(U1adjzp[l]!=U1adjzp[l])
-				//		cout<<"zp"<<' ';
-				//	if(U1adjzm[l]!=U1adjzm[l])
-				//		cout<<"zm"<<' ';
-				//	if(U1adjrp[l]!=U1adjrp[l])
-				//		cout<<"rp"<<' ';
-				//	if(U1adjrm[l]!=U1adjrm[l])
-				//		cout<<"rm"<<' ';
-				//	if(U1[l]!=U1[l])
-				//		cout<<"1"<<' ';
-
-				//}
-
-		for(int k=0;k<=NInitial::getNcomp()-1;k++)
-		{
-			grad[0][k]=(wyp1*pow(deltaryp1,2)*(U1adjrp[k]-U1[k])-wym1*pow(deltarym1,2)*(U1adjrm[k]-U1[k]))/
-				(wyp1*pow(deltaryp1,2)+wym1*pow(deltarym1,2));
-			grad[1][k]=(wxp1*pow(deltarxp1,2)*(U1adjzp[k]-U1[k])-wxm1*pow(deltarxm1,2)*(U1adjzm[k]-U1[k]))/
-				(wxp1*pow(deltarxp1,2)+wxm1*pow(deltarxm1,2));
-		}
+		Urm1[k]=/*U[i][j][k]*(1-lambdafrm)+*/U_pack_arr[i - 1  + dummy_num][j + dummy_num][k]/**lambdafrm*/;
 	}
 
-	delete []U1adjrp;
-	delete []U1adjzp;
-	delete []U1adjzm;
-	delete []U1adjrm;
-
-	delete bound;
+	for(int k = 0; k < NInitial::getNcomp(); k++)
+	{
+		grad[0][k]=(wyp1*pow(deltaryp1,2)*(Urp1[k]-U_pack_arr[i][j][k])-wym1*pow(deltarym1,2)*(Urm1[k]-U_pack_arr[i][j][k]))/
+			(wyp1*pow(deltaryp1,2)+wym1*pow(deltarym1,2));
+		grad[1][k]=(wxp1*pow(deltarxp1,2)*(Uzp1[k]-U_pack_arr[i][j][k])-wxm1*pow(deltarxm1,2)*(Uzm1[k]-U_pack_arr[i][j][k]))/
+			(wxp1*pow(deltarxp1,2)+wxm1*pow(deltarxm1,2));
+	}
 
 	delete []Uzp1;
 	delete []Urp1;
 	delete []Uzm1;
 	delete []Urm1;
-	delete []U1;
 
 }
 void NMethods::get_grad1Visc(const int i, const int j, const double ***U, double **grad, const char *bz, const char *br,
@@ -3926,12 +3236,8 @@ void NMethods::limi(const int i, const int j, const double ***U, double *psi, ch
 	delta2 = new double[NInitial::getNcomp()];
 	maxUj = new double[NInitial::getNcomp()];
 	minUj = new double[NInitial::getNcomp()];
-	Uprom = new double[NInitial::getNcomp()];
-	Uadj = new double[NInitial::getNcomp()];
 	Umax = new double[NInitial::getNcomp()];
 	Umin = new double[NInitial::getNcomp()];
-
-	NBoundaryCond *bound = new NBoundaryCond;
 
 	get_grad1(i,j,const_cast<double***>(U),grUi,bz,br,hr,hz);
 
@@ -3954,122 +3260,48 @@ void NMethods::limi(const int i, const int j, const double ***U, double *psi, ch
 		}
 	}
 
-	if((i!=0) && (i!=NInitial::get_xmax()-1))
+	vector<int> sizes(2);
+	sizes[0] = NInitial::get_xmax();
+	sizes[1] = NInitial::get_ymax();
+	NArrPacker<double> *U_pack = new NArrPacker<double>(DUMMY_NUM, sizes, NInitial::getPeriodicName(), NInitial::getSlipName(), (void*)U);
+	double*** U_pack_arr = (double***)U_pack->getPackArr();
+
+	for(int k=0;k<=NInitial::getNcomp()-1;k++)
 	{
-		for(int k=0;k<=NInitial::getNcomp()-1;k++)
-		{
-			maxUj[k]=max(U[i-1][j][k],U[i+1][j][k]);
-			minUj[k]=min(U[i-1][j][k],U[i+1][j][k]);
-		}
-	}
-	else if(i==0)
-	{
-		for(int k=0;k<=NInitial::getNcomp()-1;k++)
-			Uprom[k]=U[i][j][k];
-
-		if(br=="slip")
-			bound->slipinner(Uprom,Uadj);
-		else
-			bound->periodic(i,j,const_cast<double***>(U),Uadj,"r");
-
-		for(int k=0;k<=NInitial::getNcomp()-1;k++)
-		{
-			minUj[k]=min(Uadj[k],U[i+1][j][k]);
-			maxUj[k]=max(Uadj[k],U[i+1][j][k]);
-		}
-	}
-	else if(i==NInitial::get_xmax()-1)
-	{
-		for(int k=0;k<=NInitial::getNcomp()-1;k++)
-			Uprom[k]=U[i][j][k];
-
-		if(br=="slip")
-			bound->slip(Uprom,Uadj,"r");
-		else
-			bound->periodic(i,j,const_cast<double***>(U),Uadj,"r");
-
-		for(int k=0;k<=NInitial::getNcomp()-1;k++)
-		{
-			minUj[k]=min(U[i-1][j][k],Uadj[k]);
-			maxUj[k]=max(U[i-1][j][k],Uadj[k]);
-		}
+		maxUj[k]=max(U_pack_arr[i-1][j][k], U_pack_arr[i+1][j][k]);
+		minUj[k]=min(U_pack_arr[i-1][j][k], U_pack_arr[i+1][j][k]);
 	}
 
 
-	if(j!=NInitial::get_ymax()-1)
+	for(int k=0;k<=NInitial::getNcomp()-1;k++)
 	{
-		for(int k=0;k<=NInitial::getNcomp()-1;k++)
-		{
-			maxUj[k]=max(maxUj[k],U[i][j+1][k]);
-			minUj[k]=min(minUj[k],U[i][j+1][k]);
-		}
-	}
-	else
-	{
-		for(int k=0;k<=NInitial::getNcomp()-1;k++)
-			Uprom[k]=U[i][j][k];
-
-		if(bz=="slip")
-			bound->slip(Uprom,Uadj,"z");
-		else if(bz=="per")
-			bound->periodic(i,j,const_cast<double***>(U),Uadj,"z");
-		else
-			bound->inflow(i,NInitial::get_pin(),NInitial::get_roin(),NInitial::get_urin(),NInitial::get_uzin(),
-			NInitial::get_uphiin(),Uadj,hr);
-
-		for(int k=0;k<=NInitial::getNcomp()-1;k++)
-		{
-			minUj[k]=min(minUj[k],Uadj[k]);
-			maxUj[k]=max(maxUj[k],Uadj[k]);
-		}
-	}
-
-
-	if(j!=0)
-	{
-		for(int k=0;k<=NInitial::getNcomp()-1;k++)
-		{
-			maxUj[k]=max(maxUj[k],U[i][j-1][k]);
-			minUj[k]=min(minUj[k],U[i][j-1][k]);
-		}
-	}
-	else
-	{
-		for(int k=0;k<=NInitial::getNcomp()-1;k++)
-			Uprom[k]=U[i][j][k];
-
-		if(bz=="slip")
-			bound->slip(Uprom,Uadj,"z");
-		else if(bz=="per")
-			bound->periodic(i,j,const_cast<double***>(U),Uadj,"z");
-		else
-			bound->outflow(Uprom,Uadj);
-
-
-		for(int k=0;k<=NInitial::getNcomp()-1;k++)
-		{
-			minUj[k]=min(minUj[k],Uadj[k]);
-			maxUj[k]=max(maxUj[k],Uadj[k]);
-		}
+		maxUj[k]=max(maxUj[k], U_pack_arr[i][j+1][k]);
+		minUj[k]=min(minUj[k], U_pack_arr[i][j+1][k]);
 	}
 
 	for(int k=0;k<=NInitial::getNcomp()-1;k++)
 	{
-		Umax[k]=max(U[i][j][k],maxUj[k]);
-		Umin[k]=min(U[i][j][k],minUj[k]);
+		maxUj[k]=max(maxUj[k], U_pack_arr[i][j-1][k]);
+		minUj[k]=min(minUj[k], U_pack_arr[i][j-1][k]);
 	}
 
-	const double eps=.1e-5, omega=.1e-4;
-
 	for(int k=0;k<=NInitial::getNcomp()-1;k++)
+	{
+		Umax[k]=max(U_pack_arr[i][j][k], maxUj[k]);
+		Umin[k]=min(U_pack_arr[i][j][k], minUj[k]);
+	}
+
+	const double eps = .1e-5, omega = .1e-4;
+
+	for(int k=0; k <= NInitial::getNcomp() - 1; k++)
 	{
 		if(abs(delta2[k]) < eps)
-			delta2[k]=sign(delta2[k])*(abs(delta2[k])+omega);
+			delta2[k] = sign(delta2[k]) * (abs(delta2[k]) + omega);
 			
-		if(delta2[k]>0)
-			psi[k]=min(double(1),(Umax[k]-U[i][j][k])/delta2[k]);
-		else if(delta2[k]<0)
-			psi[k]=min(double(1),(Umin[k]-U[i][j][k])/delta2[k]);
+		if(delta2[k] > 0)
+			psi[k]=min(double(1), (Umax[k] - U_pack_arr[i][j][k])/delta2[k]);
+		else if(delta2[k] < 0)
+			psi[k]=min(double(1), (Umin[k] - U_pack_arr[i][j][k])/delta2[k]);
 		else
 			psi[k]=1;
 	}
@@ -4081,12 +3313,8 @@ void NMethods::limi(const int i, const int j, const double ***U, double *psi, ch
 	delete []delta2;
 	delete []maxUj;
 	delete []minUj;
-	delete []Uadj;
 	delete []Umax;
 	delete []Umin;
-	delete []Uprom;
-
-	delete bound;
 }
 void NMethods::limibound(const int i, const int j, const double ***U, double *psi, char *dir, char *bz, char *br,
 		const double *hr, const double *hz, const char *dirn)
@@ -5640,25 +4868,13 @@ void NMethods::limiter(const int i, const int j, double ***U, double *psi, char 
 	psi3 = new double[NInitial::getNcomp()];
 	psi4 = new double[NInitial::getNcomp()];
 
-	if((i<NInitial::get_xmax()-1) && (i>=0) && (j>=0) && (j<=NInitial::get_ymax()-1))
-		limi(i+1,j,const_cast<const double***>(U),psi,"r",bz,br,hr,hz,dirn);//i=[0;xmax-1),j=[0;ymax-1]
-	else
-		limibound(i+1,j,const_cast<const double***>(U),psi,"r",bz,br,hr,hz,dirn);
-		
-	if((i<=NInitial::get_xmax()-1) && (i>0) && (j>=0) && (j<=NInitial::get_ymax()-1))
-		limi(i-1,j,const_cast<const double***>(U),psi2,"r",bz,br,hr,hz,dirn);//i=(0;xmax-1],j=[0;ymax-1]
-	else
-		limibound(i-1,j,const_cast<const double***>(U),psi2,"r",bz,br,hr,hz,dirn);
+	limi(i+1,j,const_cast<const double***>(U),psi,"r",bz,br,hr,hz,dirn);//i=[0;xmax-1),j=[0;ymax-1]
+	
+	limi(i-1,j,const_cast<const double***>(U),psi2,"r",bz,br,hr,hz,dirn);//i=(0;xmax-1],j=[0;ymax-1]
 
-	if((i<=NInitial::get_xmax()-1) && (i>=0) && (j>=0) && (j<NInitial::get_ymax()-1))
-		limi(i,j+1,const_cast<const double***>(U),psi3,"z",bz,br,hr,hz,dirn);//i=[0;xmax-1],j=[0;ymax-1)
-	else
-		limibound(i,j+1,const_cast<const double***>(U),psi3,"z",bz,br,hr,hz,dirn);
+	limi(i,j+1,const_cast<const double***>(U),psi3,"z",bz,br,hr,hz,dirn);//i=[0;xmax-1],j=[0;ymax-1)
 
-	if((i<=NInitial::get_xmax()-1) && (i>=0) && (j>0) && (j<=NInitial::get_ymax()-1))
-		limi(i,j-1,const_cast<const double***>(U),psi4,"z",bz,br,hr,hz,dirn);//i=[0;xmax-1],j=(0;ymax-1]
-	else
-		limibound(i,j-1,const_cast<const double***>(U),psi4,"z",bz,br,hr,hz,dirn);
+	limi(i,j-1,const_cast<const double***>(U),psi4,"z",bz,br,hr,hz,dirn);//i=[0;xmax-1],j=(0;ymax-1]
 
 
 	for(int k=0;k<=NInitial::getNcomp()-1;k++)
