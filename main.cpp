@@ -5,7 +5,6 @@
 #include "includes/NOther.h"
 #endif
 
-#define DUMMY_NUM 1
 using namespace std;
 
 int main(int argc, char **argv)
@@ -62,8 +61,8 @@ int main(int argc, char **argv)
 	exit(1);*/
 	NTracer::openFile("flowTrace.dat");
 
-	other->save(const_cast<const double***>(U), "out.dat", hr, hz);
-    //other->save2dr(const_cast<const double***>(U), "out2d.dat", 100, hr, hz);
+	//other->save(const_cast<const double***>(U), "out.dat", hr, hz);
+    other->save2dr(const_cast<const double***>(U), "out2d.dat", 200, hr, hz);
 	cout << "file is saved" << '\n';
 
 	double R, R3, R4, R5, tau, t = 0;
@@ -80,8 +79,8 @@ int main(int argc, char **argv)
 		{
 			stringstream str;
 			str << i << ".dat";
-			//other->save2dr(const_cast<const double***>(U), str.str().c_str(), 100, hr, hz);
-			other->save(const_cast<const double***>(U), str.str().c_str(), hr, hz);
+			other->save2dr(const_cast<const double***>(U), str.str().c_str(), 200, hr, hz);
+			//other->save(const_cast<const double***>(U), str.str().c_str(), hr, hz);
 			cout<<"file is saved"<<'\n';
 		}
 	}

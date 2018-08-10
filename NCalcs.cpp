@@ -16,7 +16,7 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 	double *U1, *Ul, *Ur, *Fr1, *Fr2, *Fz1, *Fz2, /**S,*/
 		dlr, dlz, **gradUr, **gradUl, *psiL, rij, *Frv1, *Frv2, *Fzv1, *Fzv2,
 		*psiR, *Sv, gradH[2];
-	char *bz = "per", *br = "per";
+	char *bz = "per", *br = "slip";
 
 	U1 = new double[NInitial::getNcomp()];
 	Ul = new double[NInitial::getNcomp()];
@@ -42,6 +42,12 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 
 	NMgdMethods *methods = new NMgdMethods;
 	NMgdBoundaryCond *bound = new NMgdBoundaryCond;
+	vector<int> sizes(2);
+	sizes[0] = NInitial::get_xmax();
+	sizes[1] = NInitial::get_ymax();
+	NArrPacker<double> *U_pack = new NArrPacker<double>(DUMMY_NUM2, sizes, NInitial::getPeriodicName(), NInitial::getSlipName(), (void*)U);
+	double*** U_pack_arr = (double***)U_pack->getPackArr();
+
 
 	for(int i = 0; i <= NInitial::get_xmax() - 1; i++)
 		for(int j = 0; j <= NInitial::get_ymax() - 1; j++)
@@ -55,11 +61,11 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 
 			if((i != 0) & (j != 0) & (j != NInitial::get_ymax() - 1) & (i != NInitial::get_xmax() - 1))
 			{
-				methods->get_grad1(i, j, U, gradUr, bz, br, hr, hz);
-				methods->get_grad1(i - 1, j, U, gradUl, bz, br, hr, hz);
+				methods->get_grad1(i, j, U_pack_arr, gradUr, bz, br, hr, hz);
+				methods->get_grad1(i - 1, j, U_pack_arr, gradUl, bz, br, hr, hz);
 
-				methods->limiter(i-1,j,U,psiL,bz,br,hr,hz,"-");
-				methods->limiter(i,j,U,psiR,bz,br,hr,hz,"-");
+				methods->limiter(i-1,j,U_pack_arr,psiL,bz,br,hr,hz,"-");
+				methods->limiter(i,j,U_pack_arr,psiR,bz,br,hr,hz,"-");
 
 				//methods->stress(i,j,const_cast<const double***>(U),tauR,bz,br,hr,hz);
 				//methods->stress(i-1,j,const_cast<const double***>(U),tauL,bz,br,hr,hz);
@@ -89,11 +95,11 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 					exit(1);
 				}
 
-				methods->get_grad1(i,j,U,gradUl,bz,br,hr,hz);
-				methods->get_grad1(i+1,j,U,gradUr,bz,br,hr,hz);
+				methods->get_grad1(i,j,U_pack_arr,gradUl,bz,br,hr,hz);
+				methods->get_grad1(i+1,j,U_pack_arr,gradUr,bz,br,hr,hz);
 
-				methods->limiter(i,j,U,psiL,bz,br,hr,hz,"+");
-				methods->limiter(i+1,j,U,psiR,bz,br,hr,hz,"+");
+				methods->limiter(i,j,U_pack_arr,psiL,bz,br,hr,hz,"+");
+				methods->limiter(i+1,j,U_pack_arr,psiR,bz,br,hr,hz,"+");
 
 				//methods->stress(i+1,j,const_cast<const double***>(U),tauR,bz,br,hr,hz);
 				//methods->stress(i,j,const_cast<const double***>(U),tauL,bz,br,hr,hz);
@@ -125,11 +131,11 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 					exit(1);
 				}
 
-				methods->get_grad1(i,j,U,gradUr,bz,br,hr,hz);
-				methods->get_grad1(i,j-1,U,gradUl,bz,br,hr,hz);
+				methods->get_grad1(i,j,U_pack_arr,gradUr,bz,br,hr,hz);
+				methods->get_grad1(i,j-1,U_pack_arr,gradUl,bz,br,hr,hz);
 
-				methods->limiter(i,j-1,U,psiL,bz,br,hr,hz,"-");
-				methods->limiter(i,j,U,psiR,bz,br,hr,hz,"-");
+				methods->limiter(i,j-1,U_pack_arr,psiL,bz,br,hr,hz,"-");
+				methods->limiter(i,j,U_pack_arr,psiR,bz,br,hr,hz,"-");
 
 				//methods->stress(i,j,const_cast<const double***>(U),tauR,bz,br,hr,hz);
 				//methods->stress(i,j-1,const_cast<const double***>(U),tauL,bz,br,hr,hz);
@@ -161,11 +167,11 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 					exit(1);
 				}
 
-				methods->get_grad1(i,j,U,gradUl,bz,br,hr,hz);
-				methods->get_grad1(i,j+1,U,gradUr,bz,br,hr,hz);
+				methods->get_grad1(i,j,U_pack_arr,gradUl,bz,br,hr,hz);
+				methods->get_grad1(i,j+1,U_pack_arr,gradUr,bz,br,hr,hz);
 
-				methods->limiter(i,j,U,psiL,bz,br,hr,hz,"+");
-				methods->limiter(i,j+1,U,psiR,bz,br,hr,hz,"+");
+				methods->limiter(i,j,U_pack_arr,psiL,bz,br,hr,hz,"+");
+				methods->limiter(i,j+1,U_pack_arr,psiR,bz,br,hr,hz,"+");
 
 				//methods->stress(i,j+1,const_cast<const double***>(U),tauR,bz,br,hr,hz);
 				//methods->stress(i,j,const_cast<const double***>(U),tauL,bz,br,hr,hz);
@@ -217,11 +223,11 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 
 				if(i==0)
 				{
-					methods->get_grad1(i-1,j,U,gradUl,bz,br,hr,hz);
-					methods->get_grad1(i,j,U,gradUr,bz,br,hr,hz);
+					methods->get_grad1(i-1,j,U_pack_arr,gradUl,bz,br,hr,hz);
+					methods->get_grad1(i,j,U_pack_arr,gradUr,bz,br,hr,hz);
 
-					methods->limiter(i-1,j,U,psiL,bz,br,hr,hz,"-");
-					methods->limiter(i,j,U,psiR,bz,br,hr,hz,"-");
+					methods->limiter(i-1,j,U_pack_arr,psiL,bz,br,hr,hz,"-");
+					methods->limiter(i,j,U_pack_arr,psiR,bz,br,hr,hz,"-");
 
 					//methods->stress(i,j,const_cast<const double***>(U),tauR,bz,br,hr,hz);
 					//methods->stress(i-1,j,const_cast<const double***>(U),tauL,bz,br,hr,hz);
@@ -253,11 +259,11 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 						exit(1);
 					}
 
-					methods->get_grad1(i,j,const_cast<double***>(U),gradUl,bz,br,hr,hz);
-					methods->get_grad1(i+1,j,const_cast<double***>(U),gradUr,bz,br,hr,hz);
+					methods->get_grad1(i,j,U_pack_arr,gradUl,bz,br,hr,hz);
+					methods->get_grad1(i+1,j,U_pack_arr,gradUr,bz,br,hr,hz);
 			
-					methods->limiter(i,j,U,psiL,bz,br,hr,hz,"+");
-					methods->limiter(i+1,j,U,psiR,bz,br,hr,hz,"+");
+					methods->limiter(i,j,U_pack_arr,psiL,bz,br,hr,hz,"+");
+					methods->limiter(i+1,j,U_pack_arr,psiR,bz,br,hr,hz,"+");
 			
 					//methods->stress(i+1,j,const_cast<const double***>(U),tauR,bz,br,hr,hz);
 					//methods->stress(i,j,const_cast<const double***>(U),tauL,bz,br,hr,hz);
@@ -302,11 +308,11 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 				}
 				else
 				{
-					methods->get_grad1(i-1,j,U,gradUl,bz,br,hr,hz);
-					methods->get_grad1(i,j,U,gradUr,bz,br,hr,hz);
+					methods->get_grad1(i-1,j,U_pack_arr,gradUl,bz,br,hr,hz);
+					methods->get_grad1(i,j,U_pack_arr,gradUr,bz,br,hr,hz);
 
-					methods->limiter(i-1,j,U,psiL,bz,br,hr,hz,"-");
-					methods->limiter(i,j,U,psiR,bz,br,hr,hz,"-");
+					methods->limiter(i-1,j,U_pack_arr,psiL,bz,br,hr,hz,"-");
+					methods->limiter(i,j,U_pack_arr,psiR,bz,br,hr,hz,"-");
 
 					//methods->stress(i,j,const_cast<const double***>(U),tauR,bz,br,hr,hz);
 					//methods->stress(i-1,j,const_cast<const double***>(U),tauL,bz,br,hr,hz);
@@ -338,11 +344,11 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 						exit(1);
 					}
 
-					methods->get_grad1(i,j,U,gradUl,bz,br,hr,hz);
-					methods->get_grad1(i+1,j,U,gradUr,bz,br,hr,hz);
+					methods->get_grad1(i,j,U_pack_arr,gradUl,bz,br,hr,hz);
+					methods->get_grad1(i+1,j,U_pack_arr,gradUr,bz,br,hr,hz);
 
-					methods->limiter(i,j,U,psiL,bz,br,hr,hz,"+");
-					methods->limiter(i+1,j,U,psiR,bz,br,hr,hz,"+");
+					methods->limiter(i,j,U_pack_arr,psiL,bz,br,hr,hz,"+");
+					methods->limiter(i+1,j,U_pack_arr,psiR,bz,br,hr,hz,"+");
 
 					//methods->stress(i+1,j,const_cast<const double***>(U),tauR,bz,br,hr,hz);
 					//methods->stress(i,j,const_cast<const double***>(U),tauL,bz,br,hr,hz);
@@ -378,11 +384,11 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 
 				if((j != 0) & (j != NInitial::get_ymax() - 1))
 				{
-					methods->get_grad1(i,j-1,U,gradUl,bz,br,hr,hz);
-					methods->get_grad1(i,j,U,gradUr,bz,br,hr,hz);
+					methods->get_grad1(i,j-1,U_pack_arr,gradUl,bz,br,hr,hz);
+					methods->get_grad1(i,j,U_pack_arr,gradUr,bz,br,hr,hz);
 
-					methods->limiter(i,j-1,U,psiL,bz,br,hr,hz,"-");
-					methods->limiter(i,j,U,psiR,bz,br,hr,hz,"-");
+					methods->limiter(i,j-1,U_pack_arr,psiL,bz,br,hr,hz,"-");
+					methods->limiter(i,j,U_pack_arr,psiR,bz,br,hr,hz,"-");
 
 					//methods->stress(i,j,const_cast<const double***>(U),tauR,bz,br,hr,hz);
 					//methods->stress(i,j-1,const_cast<const double***>(U),tauL,bz,br,hr,hz);
@@ -414,11 +420,11 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 						exit(1);
 					}
 
-					methods->get_grad1(i,j,U,gradUl,bz,br,hr,hz);
-					methods->get_grad1(i,j+1,U,gradUr,bz,br,hr,hz);
+					methods->get_grad1(i,j,U_pack_arr,gradUl,bz,br,hr,hz);
+					methods->get_grad1(i,j+1,U_pack_arr,gradUr,bz,br,hr,hz);
 
-					methods->limiter(i,j,U,psiL,bz,br,hr,hz,"+");
-					methods->limiter(i,j+1,U,psiR,bz,br,hr,hz,"+");
+					methods->limiter(i,j,U_pack_arr,psiL,bz,br,hr,hz,"+");
+					methods->limiter(i,j+1,U_pack_arr,psiR,bz,br,hr,hz,"+");
 
 					//methods->stress(i,j+1,const_cast<const double***>(U),tauR,bz,br,hr,hz);
 					//methods->stress(i,j,const_cast<const double***>(U),tauL,bz,br,hr,hz);
@@ -479,11 +485,11 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 
 				if((i != 0) & (i != NInitial::get_xmax() - 1))
 				{
-					methods->get_grad1(i-1,j,U,gradUl,bz,br,hr,hz);
-					methods->get_grad1(i,j,U,gradUr,bz,br,hr,hz);
+					methods->get_grad1(i-1,j,U_pack_arr,gradUl,bz,br,hr,hz);
+					methods->get_grad1(i,j,U_pack_arr,gradUr,bz,br,hr,hz);
 			
-					methods->limiter(i-1,j,U,psiL,bz,br,hr,hz,"-");
-					methods->limiter(i,j,U,psiR,bz,br,hr,hz,"-");
+					methods->limiter(i-1,j,U_pack_arr,psiL,bz,br,hr,hz,"-");
+					methods->limiter(i,j,U_pack_arr,psiR,bz,br,hr,hz,"-");
 		
 					//methods->stress(i,j,const_cast<const double***>(U),tauR,bz,br,hr,hz);
 					//methods->stress(i-1,j,const_cast<const double***>(U),tauL,bz,br,hr,hz);
@@ -515,11 +521,11 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 						exit(1);
 					}
 
-					methods->get_grad1(i,j,U,gradUl,bz,br,hr,hz);
-					methods->get_grad1(i+1,j,U,gradUr,bz,br,hr,hz);
+					methods->get_grad1(i,j,U_pack_arr,gradUl,bz,br,hr,hz);
+					methods->get_grad1(i+1,j,U_pack_arr,gradUr,bz,br,hr,hz);
 
-					methods->limiter(i,j,U,psiL,bz,br,hr,hz,"+");
-					methods->limiter(i+1,j,U,psiR,bz,br,hr,hz,"+");
+					methods->limiter(i,j,U_pack_arr,psiL,bz,br,hr,hz,"+");
+					methods->limiter(i+1,j,U_pack_arr,psiR,bz,br,hr,hz,"+");
 
 					//methods->stress(i+1,j,const_cast<const double***>(U),tauR,bz,br,hr,hz);
 					//methods->stress(i,j,const_cast<const double***>(U),tauL,bz,br,hr,hz);
@@ -555,11 +561,11 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 
 				if(j == 0)
 				{
-					methods->get_grad1(i,j-1,U,gradUl,bz,br,hr,hz);
-					methods->get_grad1(i,j,U,gradUr,bz,br,hr,hz);
+					methods->get_grad1(i,j-1,U_pack_arr,gradUl,bz,br,hr,hz);
+					methods->get_grad1(i,j,U_pack_arr,gradUr,bz,br,hr,hz);
 
-					methods->limiter(i,j-1,U,psiL,bz,br,hr,hz,"-");
-					methods->limiter(i,j,U,psiR,bz,br,hr,hz,"-");
+					methods->limiter(i,j-1,U_pack_arr,psiL,bz,br,hr,hz,"-");
+					methods->limiter(i,j,U_pack_arr,psiR,bz,br,hr,hz,"-");
 
 					//methods->stress(i,j,const_cast<const double***>(U),tauR,bz,br,hr,hz);
 					//methods->stress(i,j-1,const_cast<const double***>(U),tauL,bz,br,hr,hz);
@@ -591,11 +597,11 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 						exit(1);
 					}
 
-					methods->get_grad1(i,j,U,gradUl,bz,br,hr,hz);
-					methods->get_grad1(i,j+1,U,gradUr,bz,br,hr,hz);
+					methods->get_grad1(i,j,U_pack_arr,gradUl,bz,br,hr,hz);
+					methods->get_grad1(i,j+1,U_pack_arr,gradUr,bz,br,hr,hz);
 
-					methods->limiter(i,j,U,psiL,bz,br,hr,hz,"+");
-					methods->limiter(i,j+1,U,psiR,bz,br,hr,hz,"+");
+					methods->limiter(i,j,U_pack_arr,psiL,bz,br,hr,hz,"+");
+					methods->limiter(i,j+1,U_pack_arr,psiR,bz,br,hr,hz,"+");
 
 					//methods->stress(i,j+1,const_cast<const double***>(U),tauR,bz,br,hr,hz);
 					//methods->stress(i,j,const_cast<const double***>(U),tauL,bz,br,hr,hz);
@@ -629,11 +635,11 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 				}
 				else
 				{
-					methods->get_grad1(i,j-1,U,gradUl,bz,br,hr,hz);
-					methods->get_grad1(i,j,U,gradUr,bz,br,hr,hz);
+					methods->get_grad1(i,j-1,U_pack_arr,gradUl,bz,br,hr,hz);
+					methods->get_grad1(i,j,U_pack_arr,gradUr,bz,br,hr,hz);
 
-					methods->limiter(i,j-1,U,psiL,bz,br,hr,hz,"-");
-					methods->limiter(i,j,U,psiR,bz,br,hr,hz,"-");
+					methods->limiter(i,j-1,U_pack_arr,psiL,bz,br,hr,hz,"-");
+					methods->limiter(i,j,U_pack_arr,psiR,bz,br,hr,hz,"-");
 
 					//methods->stress(i,j,const_cast<const double***>(U),tauR,bz,br,hr,hz);
 					//methods->stress(i,j-1,const_cast<const double***>(U),tauL,bz,br,hr,hz);
@@ -665,11 +671,11 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 						exit(1);
 					}
 
-					methods->get_grad1(i,j,U,gradUl,bz,br,hr,hz);
-					methods->get_grad1(i,j+1,U,gradUr,bz,br,hr,hz);
+					methods->get_grad1(i,j,U_pack_arr,gradUl,bz,br,hr,hz);
+					methods->get_grad1(i,j+1,U_pack_arr,gradUr,bz,br,hr,hz);
 
-					methods->limiter(i,j,U,psiL,bz,br,hr,hz,"+");
-					methods->limiter(i,j+1,U,psiR,bz,br,hr,hz,"+");
+					methods->limiter(i,j,U_pack_arr,psiL,bz,br,hr,hz,"+");
+					methods->limiter(i,j+1,U_pack_arr,psiR,bz,br,hr,hz,"+");
 
 					//methods->stress(i,j+1,const_cast<const double***>(U),tauR,bz,br,hr,hz);
 					//methods->stress(i,j,const_cast<const double***>(U),tauL,bz,br,hr,hz);
@@ -726,7 +732,7 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 				Re[i][j][k] = (Fr2[k] - Fr1[k])/dlr + (Fz2[k] - Fz1[k])/dlz;//+S[k]*hr[i]*hz[j]/rij;
 				//Rv[i][j][k]=-(Frv1[k]*dlz-Frv2[k]*dlz)-(Fzv1[k]*dlr-Fzv2[k]*dlr)-Sv[k]*hr[i]*hz[j]/rij;
 			}
-//			cout << "i = " << i << ", j = " << j << ", R = " << Re[i][j][4] << '\n';
+			//cout << "i = " << i << ", j = " << j << ", R = " << Re[i][j][4] << '\n';
 
 			//double *traceData = new double[NInitial::getNcomp() + 2];
 			//traceData[NInitial::getNcomp()] = i;
@@ -768,6 +774,7 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 	delete []Fzv2;
 	delete []psiR;
 	//delete []Sv;
+	delete U_pack;
 
 	delete methods;
 	delete bound;

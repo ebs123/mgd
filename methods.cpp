@@ -623,28 +623,22 @@ void NMethods::get_grad1(const int i, const int j, double ***U, double **grad, c
 		deltarym1=(hr[abs(i)-1]+hr[abs(i-1)-1])*.5;
 	}
 	
-	vector<int> sizes(2);
-	sizes[0] = NInitial::get_xmax();
-	sizes[1] = NInitial::get_ymax();
-	NArrPacker<double> *U_pack = new NArrPacker<double>(DUMMY_NUM, sizes, NInitial::getPeriodicName(), NInitial::getSlipName(), (void*)U);
-	double*** U_pack_arr = (double***)U_pack->getPackArr();
-
 	for(int k = 0; k <= NInitial::getNcomp() - 1; k++)
 	{
-		Uzp1[k]=/*U[i][j][k]*(1-lambdafzp)+*/U_pack_arr[i + dummy_num][j + 1 + dummy_num][k]/**lambdafzp*/;
+		Uzp1[k]=/*U[i][j][k]*(1-lambdafzp)+*/U[i + DUMMY_NUM2][j + 1 + DUMMY_NUM2][k]/**lambdafzp*/;
 
-		Uzm1[k]=/*U[i][j][k]*(1-lambdafzm)+*/U_pack_arr[i + dummy_num][j - 1 + dummy_num][k]/**lambdafzm*/;
+		Uzm1[k]=/*U[i][j][k]*(1-lambdafzm)+*/U[i + DUMMY_NUM2][j - 1 + DUMMY_NUM2][k]/**lambdafzm*/;
 
-		Urp1[k]=/*U[i][j][k]*(1-lambdafrp)+*/U_pack_arr[i + 1  + dummy_num][j + dummy_num][k]/**lambdafrp*/;
+		Urp1[k]=/*U[i][j][k]*(1-lambdafrp)+*/U[i + 1  + DUMMY_NUM2][j + DUMMY_NUM2][k]/**lambdafrp*/;
 
-		Urm1[k]=/*U[i][j][k]*(1-lambdafrm)+*/U_pack_arr[i - 1  + dummy_num][j + dummy_num][k]/**lambdafrm*/;
+		Urm1[k]=/*U[i][j][k]*(1-lambdafrm)+*/U[i - 1  + DUMMY_NUM2][j + DUMMY_NUM2][k]/**lambdafrm*/;
 	}
 
 	for(int k = 0; k < NInitial::getNcomp(); k++)
 	{
-		grad[0][k]=(wyp1*pow(deltaryp1,2)*(Urp1[k]-U_pack_arr[i][j][k])-wym1*pow(deltarym1,2)*(Urm1[k]-U_pack_arr[i][j][k]))/
+		grad[0][k]=(wyp1*pow(deltaryp1,2)*(Urp1[k]-U[i + DUMMY_NUM2][j + DUMMY_NUM2][k])-wym1*pow(deltarym1,2)*(Urm1[k]-U[i + DUMMY_NUM2][j + DUMMY_NUM2][k]))/
 			(wyp1*pow(deltaryp1,2)+wym1*pow(deltarym1,2));
-		grad[1][k]=(wxp1*pow(deltarxp1,2)*(Uzp1[k]-U_pack_arr[i][j][k])-wxm1*pow(deltarxm1,2)*(Uzm1[k]-U_pack_arr[i][j][k]))/
+		grad[1][k]=(wxp1*pow(deltarxp1,2)*(Uzp1[k]-U[i + DUMMY_NUM2][j + DUMMY_NUM2][k])-wxm1*pow(deltarxm1,2)*(Uzm1[k]-U[i + DUMMY_NUM2][j + DUMMY_NUM2][k]))/
 			(wxp1*pow(deltarxp1,2)+wxm1*pow(deltarxm1,2));
 	}
 
@@ -652,7 +646,6 @@ void NMethods::get_grad1(const int i, const int j, double ***U, double **grad, c
 	delete []Urp1;
 	delete []Uzm1;
 	delete []Urm1;
-
 }
 void NMethods::get_grad1Visc(const int i, const int j, const double ***U, double **grad, const char *bz, const char *br,
 	const double *hr, const double *hz)
@@ -3263,32 +3256,30 @@ void NMethods::limi(const int i, const int j, const double ***U, double *psi, ch
 	vector<int> sizes(2);
 	sizes[0] = NInitial::get_xmax();
 	sizes[1] = NInitial::get_ymax();
-	NArrPacker<double> *U_pack = new NArrPacker<double>(DUMMY_NUM, sizes, NInitial::getPeriodicName(), NInitial::getSlipName(), (void*)U);
-	double*** U_pack_arr = (double***)U_pack->getPackArr();
 
 	for(int k=0;k<=NInitial::getNcomp()-1;k++)
 	{
-		maxUj[k]=max(U_pack_arr[i-1][j][k], U_pack_arr[i+1][j][k]);
-		minUj[k]=min(U_pack_arr[i-1][j][k], U_pack_arr[i+1][j][k]);
+		maxUj[k]=max(U[i-1+DUMMY_NUM2][j+DUMMY_NUM2][k], U[i+1+DUMMY_NUM2][j+DUMMY_NUM2][k]);
+		minUj[k]=min(U[i-1+DUMMY_NUM2][j+DUMMY_NUM2][k], U[i+1+DUMMY_NUM2][j+DUMMY_NUM2][k]);
 	}
 
 
 	for(int k=0;k<=NInitial::getNcomp()-1;k++)
 	{
-		maxUj[k]=max(maxUj[k], U_pack_arr[i][j+1][k]);
-		minUj[k]=min(minUj[k], U_pack_arr[i][j+1][k]);
+		maxUj[k]=max(maxUj[k], U[i+DUMMY_NUM2][j+1+DUMMY_NUM2][k]);
+		minUj[k]=min(minUj[k], U[i+DUMMY_NUM2][j+1+DUMMY_NUM2][k]);
 	}
 
 	for(int k=0;k<=NInitial::getNcomp()-1;k++)
 	{
-		maxUj[k]=max(maxUj[k], U_pack_arr[i][j-1][k]);
-		minUj[k]=min(minUj[k], U_pack_arr[i][j-1][k]);
+		maxUj[k]=max(maxUj[k], U[i+DUMMY_NUM2][j-1+DUMMY_NUM2][k]);
+		minUj[k]=min(minUj[k], U[i+DUMMY_NUM2][j-1+DUMMY_NUM2][k]);
 	}
 
 	for(int k=0;k<=NInitial::getNcomp()-1;k++)
 	{
-		Umax[k]=max(U_pack_arr[i][j][k], maxUj[k]);
-		Umin[k]=min(U_pack_arr[i][j][k], minUj[k]);
+		Umax[k]=max(U[i+DUMMY_NUM2][j+DUMMY_NUM2][k], maxUj[k]);
+		Umin[k]=min(U[i+DUMMY_NUM2][j+DUMMY_NUM2][k], minUj[k]);
 	}
 
 	const double eps = .1e-5, omega = .1e-4;
@@ -3299,9 +3290,9 @@ void NMethods::limi(const int i, const int j, const double ***U, double *psi, ch
 			delta2[k] = sign(delta2[k]) * (abs(delta2[k]) + omega);
 			
 		if(delta2[k] > 0)
-			psi[k]=min(double(1), (Umax[k] - U_pack_arr[i][j][k])/delta2[k]);
+			psi[k]=min(double(1), (Umax[k] - U[i+DUMMY_NUM2][j+DUMMY_NUM2][k])/delta2[k]);
 		else if(delta2[k] < 0)
-			psi[k]=min(double(1), (Umin[k] - U_pack_arr[i][j][k])/delta2[k]);
+			psi[k]=min(double(1), (Umin[k] - U[i+DUMMY_NUM2][j+DUMMY_NUM2][k])/delta2[k]);
 		else
 			psi[k]=1;
 	}

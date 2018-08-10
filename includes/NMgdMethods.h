@@ -1,7 +1,7 @@
 #pragma once
 #include "methods.h"
 #include "NTracer.h"
-#include "NArrPacker.h"
+
 
 class NMgdMethods :
 	public NMethods

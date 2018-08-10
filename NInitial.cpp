@@ -132,11 +132,13 @@ void NInitial::initial(double ***U, const double *hr, const double *hz)
 	if(methods == NULL)
 		cout << "Can't create methods";
 	
-	double rij, uz, ur, zij, p;
-	const double gamma = 1.6666666666666666666666666666667;
-	/********** распад МГД-разрыва *****************
+	double rij, uz, ur, uy, zij, p;
+	/****************Orszag–Tang MHD turbulence problem
+	//const double gamma = 1.6666666666666666666666666666667;
+	/********************************************
+	/********** распад МГД-разрыва ******************/
 	const double roLeft = 1, roRight = .125, pLeft = 1, pRight = .1, HyLeft = 1, HyRight = -1, Hx = .75;
-	**********************************************/
+	/***********************************************/
 	/****************Kelvin-Helmgoltz instability
 	const double a = 1, u0 = 2, u0_tilda = .008, lambda = 15.707963267948966192313216916398;
 	**********************************************/
@@ -148,7 +150,7 @@ void NInitial::initial(double ***U, const double *hr, const double *hz)
 			rij = methods->rij1(i, hr);
 			zij = methods->zij1(j, hz[0]);
 			/*****************Orszag–Tang MHD turbulence problem*/
-			U[i][j][0] = pow(gamma, 2);
+			/*U[i][j][0] = pow(gamma, 2);
 			U[i][j][1] = - U[i][j][0] * sin(zij);
 			U[i][j][2] = U[i][j][0] * sin(rij);
 			U[i][j][3] = 0.;
@@ -156,7 +158,7 @@ void NInitial::initial(double ***U, const double *hr, const double *hz)
 			U[i][j][6] = sin(2 * rij);
 			U[i][j][7] = 0.;
 			U[i][j][4] = gamma/sigma + (pow(U[i][j][1]/U[i][j][0], 2) + pow(U[i][j][2]/U[i][j][0], 2)) * 
-				.5 * U[i][j][0] + .5 * (pow(U[i][j][5], 2) + pow(U[i][j][6], 2));
+				.5 * U[i][j][0] + .5 * (pow(U[i][j][5], 2) + pow(U[i][j][6], 2));*/
 			
 			/******************/
 			/*****************Kelvin-Helmgoltz instability (нужно допилить граничные условия)
@@ -169,11 +171,11 @@ void NInitial::initial(double ***U, const double *hr, const double *hz)
 			U[i][j][6] = 0.;
 			U[i][j][7] = Hz0;
 			*****************/
-			/********** распад МГД-разрыва *****************
+			/********** распад МГД-разрыва ******************/
 
-			uphi = 0.;
 			uz = 0.;
 			ur = 0.;
+			uy = 0.;
 			if(rij < 1)
 			{
 				p = pLeft;
@@ -181,8 +183,8 @@ void NInitial::initial(double ***U, const double *hr, const double *hz)
 				U[i][j][0]=roLeft;
 				U[i][j][1]=roLeft*ur;
 				U[i][j][2]=roLeft*uz;
-				U[i][j][3]=roLeft*uphi;
-				U[i][j][4] = p/sigma + (pow(ur, 2) + pow(uz, 2) + pow(uphi, 2)) * .5 * roLeft + .5 * (pow(HyLeft, 2) + pow(H[0], 2) + pow(Hx, 2));
+				U[i][j][3]=roLeft*uy;
+				U[i][j][4] = p/sigma + (pow(ur, 2) + pow(uz, 2) + pow(uy, 2)) * .5 * roLeft + .5 * (pow(HyLeft, 2) + pow(H[0], 2) + pow(Hx, 2));
 			}
 			else
 			{
@@ -191,13 +193,13 @@ void NInitial::initial(double ***U, const double *hr, const double *hz)
 				U[i][j][0]=roRight;
 				U[i][j][1]=roRight*ur;
 				U[i][j][2]=roRight*uz;
-				U[i][j][3]=roRight*uphi;
-				U[i][j][4]=p/sigma + (pow(ur, 2) + pow(uz, 2) + pow(uphi, 2)) * .5 * roRight + .5 * (pow(HyRight, 2) + pow(H[0], 2) + pow(Hx, 2));
+				U[i][j][3]=roRight*uy;
+				U[i][j][4]=p/sigma + (pow(ur, 2) + pow(uz, 2) + pow(uy, 2)) * .5 * roRight + .5 * (pow(HyRight, 2) + pow(H[0], 2) + pow(Hx, 2));
 			}
 
 			U[i][j][7] = H[0];
 			U[i][j][5] = Hx;
-			*****************************/
+			/******************************/
 		}
 
 	delete methods;

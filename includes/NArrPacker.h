@@ -1,5 +1,6 @@
 #pragma once
-#include "bound.h"
+//#include "bound.h"
+
 /*
 *	 ласс-упаковщик сетки в расширенную сетку с dummy-€чейками, 
 *	индексы dummy-€чеек имеют значение [-n; -1] и [Nmax; Nmax + n - 1],
@@ -12,11 +13,11 @@ private:
 	char *z_boundary_cond;
 	char *r_boundary_cond;
 	int dummy_num;//число dummy €чеек
-	vector<int> dim_sizes;//размеры массива (сетки)
+	std::vector<int> dim_sizes;//размеры массива (сетки)
 	void* packed_arr;//собственно, упакованный массив
 
 public:
-	NArrPacker(int num_dummy, vector<int> sizes, char *boundary_cond_z, char *boundary_cond_r, void* arr = NULL);
+	NArrPacker(int num_dummy, std::vector<int> sizes, char *boundary_cond_z, char *boundary_cond_r, void* arr = NULL);
 	virtual ~NArrPacker(void);
 
 	void packer(void* arr);
@@ -29,7 +30,7 @@ template <class Type> void* NArrPacker<Type>::getPackArr()
 	return packed_arr;
 }
 
-template <class Type> NArrPacker<Type>::NArrPacker(int num_dummy, vector<int> sizes, char *boundary_cond_z, char *boundary_cond_r, void* arr = NULL) : 
+template <class Type> NArrPacker<Type>::NArrPacker(int num_dummy, std::vector<int> sizes, char *boundary_cond_z, char *boundary_cond_r, void* arr = NULL) : 
 dummy_num(num_dummy), dim_sizes(sizes), z_boundary_cond(boundary_cond_z), r_boundary_cond(boundary_cond_r)
 {
 	if (sizes.size() == 1)
@@ -102,7 +103,7 @@ template <class Type> NArrPacker<Type>::~NArrPacker(void)
 		delete []tmp_arr;
 
 	}
-	else if(dim_sizes.size() == 2)
+	else if(dim_sizes.size() == 3)
 	{
 		Type ****tmp_arr;
 		tmp_arr = (Type****)packed_arr;

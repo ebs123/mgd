@@ -436,25 +436,25 @@ double*** NMgdMethods::korrectH(const double ***U, const double *hr, const doubl
 	for(int i = 0; i <= NInitial::get_xmax() - 1; i++)
 		for(int j = 0; j <= NInitial::get_ymax() - 1; j++)
 		{
-			Roe(U_pack_arr[i + dummy_num][j + dummy_num], U_pack_arr[i + dummy_num][j - 1 + dummy_num], F, "z", NULL);
+			Roe(U_pack_arr[i + DUMMY_NUM][j + DUMMY_NUM], U_pack_arr[i + DUMMY_NUM][j - 1 + DUMMY_NUM], F, "z", NULL);
 			Fz_i_jmh = F[5];
-			Roe(U_pack_arr[i - 1 + dummy_num][j + dummy_num], U_pack_arr[i - 1 + dummy_num][j - 1 + dummy_num], F, "z", NULL);
+			Roe(U_pack_arr[i - 1 + DUMMY_NUM][j + DUMMY_NUM], U_pack_arr[i - 1 + DUMMY_NUM][j - 1 + DUMMY_NUM], F, "z", NULL);
 			Fz_im_jmh = F[5];
-			Roe(U_pack_arr[i + dummy_num][j - 1 + dummy_num], U_pack_arr[i - 1 + dummy_num][j - 1 + dummy_num], F, "r", NULL);
+			Roe(U_pack_arr[i + DUMMY_NUM][j - 1 + DUMMY_NUM], U_pack_arr[i - 1 + DUMMY_NUM][j - 1 + DUMMY_NUM], F, "r", NULL);
 			Fr_imh_jm = F[6];
-			Roe(U_pack_arr[i + dummy_num][j + 1 + dummy_num], U_pack_arr[i + dummy_num][j + dummy_num], F, "z", NULL);
+			Roe(U_pack_arr[i + DUMMY_NUM][j + 1 + DUMMY_NUM], U_pack_arr[i + DUMMY_NUM][j + DUMMY_NUM], F, "z", NULL);
 			Fz_i_jph = F[5];
-			Roe(U_pack_arr[i - 1 + dummy_num][j + 1 + dummy_num], U_pack_arr[i - 1 + dummy_num][j + dummy_num], F, "z", NULL);
+			Roe(U_pack_arr[i - 1 + DUMMY_NUM][j + 1 + DUMMY_NUM], U_pack_arr[i - 1 + DUMMY_NUM][j + DUMMY_NUM], F, "z", NULL);
 			Fz_im_jph = F[5];
-			Roe(U_pack_arr[i + dummy_num][j + 1 + dummy_num], U_pack_arr[i - 1 + dummy_num][j + 1 + dummy_num], F, "r", NULL);
+			Roe(U_pack_arr[i + DUMMY_NUM][j + 1 + DUMMY_NUM], U_pack_arr[i - 1 + DUMMY_NUM][j + 1 + DUMMY_NUM], F, "r", NULL);
 			Fr_imh_jp = F[6];
-			Roe(U_pack_arr[i + 1 + dummy_num][j + dummy_num], U_pack_arr[i + 1 + dummy_num][j - 1 + dummy_num], F, "z", NULL);
+			Roe(U_pack_arr[i + 1 + DUMMY_NUM][j + DUMMY_NUM], U_pack_arr[i + 1 + DUMMY_NUM][j - 1 + DUMMY_NUM], F, "z", NULL);
 			Fz_ip_jmh = F[5];
-			Roe(U_pack_arr[i + 1 + dummy_num][j + dummy_num], U_pack_arr[i + dummy_num][j + dummy_num], F, "r", NULL);
+			Roe(U_pack_arr[i + 1 + DUMMY_NUM][j + DUMMY_NUM], U_pack_arr[i + DUMMY_NUM][j + DUMMY_NUM], F, "r", NULL);
 			Fr_iph_j = F[6];
-			Roe(U_pack_arr[i + 1 + dummy_num][j - 1 + dummy_num], U_pack_arr[i + dummy_num][j - 1 + dummy_num], F, "r", NULL);
+			Roe(U_pack_arr[i + 1 + DUMMY_NUM][j - 1 + DUMMY_NUM], U_pack_arr[i + DUMMY_NUM][j - 1 + DUMMY_NUM], F, "r", NULL);
 			Fr_iph_jm = F[6];
-			Roe(U_pack_arr[i + dummy_num][j + dummy_num], U_pack_arr[i - 1 + dummy_num][j + dummy_num], F, "r", NULL);
+			Roe(U_pack_arr[i + DUMMY_NUM][j + DUMMY_NUM], U_pack_arr[i - 1 + DUMMY_NUM][j + DUMMY_NUM], F, "r", NULL);
 			Fr_imh_j = F[6];
 
 			H_Korrect[i][j][0] = U[i][j][5] + tau * .25/hz[j] * (Fz_i_jmh + Fz_im_jmh - Fr_imh_jm - Fz_i_jph 
@@ -463,13 +463,13 @@ double*** NMgdMethods::korrectH(const double ***U, const double *hr, const doubl
 				Fr_imh_j + Fr_imh_jm);
 
 
-			Roe(U_pack_arr[i + dummy_num][j + dummy_num], U_pack_arr[i + dummy_num][j - 1 + dummy_num], F, "z", NULL);
+			Roe(U_pack_arr[i + DUMMY_NUM][j + DUMMY_NUM], U_pack_arr[i + DUMMY_NUM][j - 1 + DUMMY_NUM], F, "z", NULL);
 			Fz_i_jmh = F[7];
-			Roe(U_pack_arr[i + dummy_num][j + 1 + dummy_num], U_pack_arr[i + dummy_num][j + dummy_num], F, "z", NULL);
+			Roe(U_pack_arr[i + DUMMY_NUM][j + 1 + DUMMY_NUM], U_pack_arr[i + DUMMY_NUM][j + DUMMY_NUM], F, "z", NULL);
 			Fz_i_jph = F[7];
-			Roe(U_pack_arr[i + 1 + dummy_num][j + dummy_num], U_pack_arr[i + dummy_num][j + dummy_num], F, "r", NULL);
+			Roe(U_pack_arr[i + 1 + DUMMY_NUM][j + DUMMY_NUM], U_pack_arr[i + DUMMY_NUM][j + DUMMY_NUM], F, "r", NULL);
 			Fr_iph_j = F[7];
-			Roe(U_pack_arr[i + dummy_num][j + dummy_num], U_pack_arr[i - 1 + dummy_num][j + dummy_num], F, "r", NULL);
+			Roe(U_pack_arr[i + DUMMY_NUM][j + DUMMY_NUM], U_pack_arr[i - 1 + DUMMY_NUM][j + DUMMY_NUM], F, "r", NULL);
 			Fr_imh_j = F[7];
 
 			H_Korrect[i][j][2] = U[i][j][7] + tau * (1/hr[i] * (Fr_imh_j - Fr_iph_j) + 1/hz[j] * (Fz_i_jmh - Fz_i_jph));
