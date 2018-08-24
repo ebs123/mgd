@@ -132,12 +132,12 @@ void NInitial::initial(double ***U, const double *hr, const double *hz)
 	if(methods == NULL)
 		cout << "Can't create methods";
 	
-	double rij, uz, ur, uy, zij, p;
+	double rij, uz, ur, uphi, zij, p;
 	/****************Orszag–Tang MHD turbulence problem
 	//const double gamma = 1.6666666666666666666666666666667;
 	/********************************************
 	/********** ðàñïàä ÌÃÄ-ðàçðûâà ******************/
-	const double roLeft = 1, roRight = .125, pLeft = 1, pRight = .1, HyLeft = 1, HyRight = -1, Hx = .75;
+	const double roLeft = 1, roRight = .125, pLeft = 1, pRight = .1, HzLeft = 1, HzRight = -1, Hr = .75;
 	/***********************************************/
 	/****************Kelvin-Helmgoltz instability
 	const double a = 1, u0 = 2, u0_tilda = .008, lambda = 15.707963267948966192313216916398;
@@ -175,30 +175,30 @@ void NInitial::initial(double ***U, const double *hr, const double *hz)
 
 			uz = 0.;
 			ur = 0.;
-			uy = 0.;
+			uphi = 0.;
 			if(rij < 1)
 			{
 				p = pLeft;
-				U[i][j][6] = HyLeft;
+				U[i][j][6] = HzLeft;
 				U[i][j][0]=roLeft;
 				U[i][j][1]=roLeft*ur;
 				U[i][j][2]=roLeft*uz;
-				U[i][j][3]=roLeft*uy;
-				U[i][j][4] = p/sigma + (pow(ur, 2) + pow(uz, 2) + pow(uy, 2)) * .5 * roLeft + .5 * (pow(HyLeft, 2) + pow(H[0], 2) + pow(Hx, 2));
+				U[i][j][3]=roLeft*uphi;
+				U[i][j][4] = p/sigma + (pow(ur, 2) + pow(uz, 2) + pow(uphi, 2)) * .5 * roLeft + .5 * (pow(HzLeft, 2) + pow(H[0], 2) + pow(Hr, 2));
 			}
 			else
 			{
 				p=pRight;
-				U[i][j][6] = HyRight;
+				U[i][j][6] = HzRight;
 				U[i][j][0]=roRight;
 				U[i][j][1]=roRight*ur;
 				U[i][j][2]=roRight*uz;
-				U[i][j][3]=roRight*uy;
-				U[i][j][4]=p/sigma + (pow(ur, 2) + pow(uz, 2) + pow(uy, 2)) * .5 * roRight + .5 * (pow(HyRight, 2) + pow(H[0], 2) + pow(Hx, 2));
+				U[i][j][3]=roRight*uphi;
+				U[i][j][4]=p/sigma + (pow(ur, 2) + pow(uz, 2) + pow(uphi, 2)) * .5 * roRight + .5 * (pow(HzRight, 2) + pow(H[0], 2) + pow(Hr, 2));
 			}
 
 			U[i][j][7] = H[0];
-			U[i][j][5] = Hx;
+			U[i][j][5] = Hr;
 			/******************************/
 		}
 

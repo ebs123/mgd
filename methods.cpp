@@ -241,7 +241,7 @@ void NMethods::Frp(const double *U, double *F)
 	F[1] = pow(U[1], 2)/U[0] + press(U);
 	F[2] = U[2] * U[1]/U[0];
 	F[3] = U[1] * U[3]/U[0];
-	F[4] = (U[3] + press(U)) * U[1]/U[0];
+	F[4] = (U[4] + press(U)) * U[1]/U[0];
 }
 void NMethods::Fz(const double *U, double *F)
 {
@@ -249,7 +249,7 @@ void NMethods::Fz(const double *U, double *F)
 	F[1] = U[2] * U[1]/U[0];
 	F[2] = pow(U[2], 2)/U[0] + press(U);
 	F[3] = U[2] * U[3]/U[0];
-	F[4] = (U[3] + press(U)) * U[2]/U[0];
+	F[4] = (U[4] + press(U)) * U[2]/U[0];
 }
 void NMethods::Roe(const double *Ur, const double *Ul, double *Flux, const char *dir, const char *dirn)
 {
@@ -387,16 +387,11 @@ void NMethods::Roe(const double *Ur, const double *Ul, double *Flux, const char 
 }
 void NMethods::Sourse(const double *U, double *S)
 {
-	S[0]=U[1];
-	S[1]=pow(U[1],2)/U[0]-pow(U[3],2)/U[0];
-	S[2]=U[2]*U[1]/U[0];
-	S[3]=2*U[1]*U[3]/U[0];
-	S[4]=(U[4]+press(U))*U[1]/U[0];
-	//S[0]=U[1];
-	//S[1]=(pow(U[1],2)-pow(U[3],2))/U[0];
-	//S[2]=U[1]*U[2]/U[0];
-	//S[3]=2*U[1]*U[3]/U[0];
-	//S[4]=(U[4]+press(U))*U[1]/U[0];
+	S[0] = U[1];
+	S[1] = pow(U[1],2)/U[0] - pow(U[3],2)/U[0] + press(U);
+	S[2] = U[2] * U[1]/U[0];
+	S[3] = 2 * U[1] * U[3]/U[0];
+	S[4] = (U[4] + press(U)) * U[1]/U[0];
 }
 void NMethods::get_grad1(const int i, const int j, double ***U, double **grad, const char *bz, const char *br,
 	const double *hr, const double *hz)

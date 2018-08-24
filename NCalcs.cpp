@@ -13,7 +13,7 @@ NCalcs::~NCalcs(void)
 }
 void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz, double ***Rv)
 {
-	double *U1, *Ul, *Ur, *Fr1, *Fr2, *Fz1, *Fz2, /**S,*/
+	double *U1, *Ul, *Ur, *Fr1, *Fr2, *Fz1, *Fz2, *S,
 		dlr, dlz, **gradUr, **gradUl, *psiL, rij, *Frv1, *Frv2, *Fzv1, *Fzv2,
 		*psiR, *Sv, gradH[2];
 	char *bz = "per", *br = "slip";
@@ -25,7 +25,7 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 	Fr2 = new double[NInitial::getNcomp()];
 	Fz1 = new double[NInitial::getNcomp()];
 	Fz2 = new double[NInitial::getNcomp()];
-	//S = new double[NInitial::getNcomp()];
+	S = new double[NInitial::getNcomp()];
 	gradUr = new double*[2];
 	for(size_t i = 0; i < 2; i++)
 		gradUr[i] = new double[NInitial::getNcomp()];
@@ -721,7 +721,7 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 
 			dlr=hr[i];
 			dlz=hz[j];
-			//methods->NMgdMethods::Sourse(U[i][j],S);
+			methods->NMgdMethods::Sourse(U[i][j], S);
 			//methods->getGradH(i,j,const_cast<const double***>(U),hr,hz,bz,br,gradH);
 	  //      methods->stress(i,j,const_cast<const double***>(U),tau,bz,br,hr,hz);
 
@@ -729,10 +729,9 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 			
 			for(int k = 0; k <= NInitial::getNcomp() - 1; k++)
 			{
-				Re[i][j][k] = (Fr2[k] - Fr1[k])/dlr + (Fz2[k] - Fz1[k])/dlz;//+S[k]*hr[i]*hz[j]/rij;
+				Re[i][j][k] = (Fr2[k] - Fr1[k])/dlr + (Fz2[k] - Fz1[k])/dlz + S[k]/rij;
 				//Rv[i][j][k]=-(Frv1[k]*dlz-Frv2[k]*dlz)-(Fzv1[k]*dlr-Fzv2[k]*dlr)-Sv[k]*hr[i]*hz[j]/rij;
 			}
-			//cout << "i = " << i << ", j = " << j << ", R = " << Re[i][j][4] << '\n';
 
 			//double *traceData = new double[NInitial::getNcomp() + 2];
 			//traceData[NInitial::getNcomp()] = i;

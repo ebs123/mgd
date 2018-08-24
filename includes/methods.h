@@ -6,15 +6,6 @@
 #include <vector>
 
 #include "NArrPacker.h"
-//#define roin 1
-//#define urin 0
-//#define uzin 0
-//#define uphiin 0
-//#define Cp 1.008
-//#define kappa 2.576
-//#define RFAKTOR 1.05//faktor=x[i+1]/x[i]
-//#define RZONE 20
-//воздух!!!!!!!!!
 #define DUMMY_NUM 1
 #define DUMMY_NUM2 3
 

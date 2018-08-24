@@ -20,8 +20,8 @@ void NMgdMethods::Frp(const double *U, double *F)
 	F[1] += .5 * (pow(U[6], 2) + pow(U[7], 2) - pow(U[5], 2));
 	F[2] -= U[5] * U[6];
 	F[3] -= U[5] * U[7];
-	F[4] += (U[1]/U[0] * .5 * (pow(U[5], 2) + pow(U[6], 2) + pow(U[7], 2)) - 
-		U[5] * (U[5] * U[1]/U[0] + U[6] * U[2]/U[0] + U[7] * U[3]/U[0]));
+	F[4] += U[1]/U[0] * .5 * (pow(U[5], 2) + pow(U[6], 2) + pow(U[7], 2)) - 
+		U[5] * (U[5] * U[1]/U[0] + U[6] * U[2]/U[0] + U[7] * U[3]/U[0]);
 	F[5] = 0;
 	F[6] = U[1]/U[0] * U[6] - U[2]/U[0] * U[5];
 	F[7] = U[1]/U[0] * U[7] - U[3]/U[0] * U[5];
@@ -33,8 +33,8 @@ void NMgdMethods::Fz(const double *U, double *F)
 	F[1] -= U[5] * U[6];
 	F[2] += .5 * (pow(U[5], 2) + pow(U[7], 2) - pow(U[6], 2));
 	F[3] -= U[6] * U[7];
-	F[4] += (U[2]/U[0] * .5 * (pow(U[5], 2) + pow(U[6], 2) + pow(U[7], 2)) - 
-		U[6] * (U[5] * U[1]/U[0] + U[6] * U[2]/U[0] + U[7] * U[3]/U[0]));
+	F[4] += U[2]/U[0] * .5 * (pow(U[5], 2) + pow(U[6], 2) + pow(U[7], 2)) - 
+		U[6] * (U[5] * U[1]/U[0] + U[6] * U[2]/U[0] + U[7] * U[3]/U[0]);
 	F[5] = U[2]/U[0] * U[5] - U[1]/U[0] * U[6];
 	F[6] = 0.;
 	F[7] = U[2]/U[0] * U[7] - U[3]/U[0] * U[6];
@@ -45,7 +45,19 @@ double* NMgdMethods::f_cusp(const double *U, const string &comp)//выделяет памят
 	double *ret = new double[NInitial::getNcomp()];
 
 	for(size_t i = 0; i < NInitial::getNcomp(); i++)
+	{
+		if(i == 5 & !strcmp(comp.c_str(), "r"))
+		{
+			ret[i] = 0.;
+			continue;
+		}
+		else if(i == 6 & !strcmp(comp.c_str(), "z"))
+		{
+			ret[i] = 0.;
+			continue;
+		}
 		ret[i] = U[i];
+	}
 
 	return ret;
 }
@@ -62,7 +74,7 @@ double* NMgdMethods::P_cusp(const double *U, const string &comp)//выделяет памят
 		ret[2] = - U[5] * U[6];
 		ret[3] = - U[5] * U[7];
 		ret[4] = - U[5] * (U[5] * U[1]/U[0] + U[6] * U[2]/U[0] + U[7] * U[3]/U[0]);
-		ret[5] = - U[5] * U[1]/U[0];
+		ret[5] = 0.;
 		ret[6] = - U[2]/U[0] * U[5];
 		ret[7] = - U[3]/U[0] * U[5];
 	}
@@ -74,7 +86,7 @@ double* NMgdMethods::P_cusp(const double *U, const string &comp)//выделяет памят
 		ret[3] = - U[6] * U[7];
 		ret[4] = - U[6] * (U[5] * U[1]/U[0] + U[6] * U[2]/U[0] + U[7] * U[3]/U[0]);
 		ret[5] = - U[1]/U[0] * U[6];
-		ret[6] = - U[2]/U[0] * U[6];
+		ret[6] = 0.;
 		ret[7] = - U[3]/U[0] * U[6];
 	}
 	else
@@ -102,8 +114,6 @@ double* NMgdMethods::psi_cusp(const double *U)//выделяет память под return масси
 
 void NMgdMethods::Roe(const double *Ur, const double *Ul, double *Flux, const char *dir, const char *dirn)
 {
-	//vector<vector<double> > A_Roe;
-	//A_Roe = roeMatrix(Ur, Ul, dir, dirn);
 	double *f_r, *f_l, *P_l, *P_r, *psi_l, *psi_r;
 	double M_l, M_r, a_half_l, a_half_r, a_half, C_plus, C_minus, alpha_plus_l, alpha_minus_r, beta_l;
 	double beta_r, Dl_plus, Dr_minus, *psi_half;
@@ -141,8 +151,8 @@ void NMgdMethods::Roe(const double *Ur, const double *Ul, double *Flux, const ch
 	}
 	alpha_plus_l = .5 * (1 + sign(M_l));
 	alpha_minus_r = .5 * (1 - sign(M_r));
-	beta_l = - max(0, 1 - static_cast< int >(abs(M_l)));//??????????????int
-	beta_r = - max(0, 1 - static_cast< int >(abs(M_r)));//????????????int
+	beta_l = - max(0, 1 - static_cast< int >(abs(M_l)));
+	beta_r = - max(0, 1 - static_cast< int >(abs(M_r)));
 	C_plus = alpha_plus_l * (1 + beta_l) * M_l - .25 * beta_l * pow(M_l + 1, 2);
 	C_minus = alpha_minus_r * (1 + beta_r) * M_r + .25 * beta_r * pow(M_r - 1, 2);
 	Dl_plus = alpha_plus_l * (1 + beta_l) - .5 * beta_l * (1 + M_l);
@@ -206,14 +216,14 @@ void NMgdMethods::Roe(const double *Ur, const double *Ul, double *Flux, const ch
 void NMgdMethods::Sourse(const double *U, double *S)
 {
 	NMethods::Sourse(U, S);
-	S[1] -= 1/(4. * NInitial::get_pi()) * (pow(U[5], 2) - pow(U[7], 2)) + .125 * 1/NInitial::get_pi() * (pow(U[6], 2) + pow(U[7], 2) - pow(U[5], 2)) + press(U);
-	S[2] -= 1/(4. * NInitial::get_pi()) * U[5] * U[6];
-	S[3] -= 1/(4. * NInitial::get_pi()) * (U[5] * U[7] + U[5] * U[6]);
-	S[4] += 1/(4. * NInitial::get_pi()) * (U[1]/U[0] * (pow(U[5], 2) + pow(U[6], 2) + pow(U[7], 2)) - 
-		U[5] * (U[5] * U[1]/U[0] + U[6] * U[2]/U[0] + U[7] * U[3]/U[0]));
+	S[1] += .5 * (pow(U[6], 2) + 3. * pow(U[7], 2) - pow(U[5], 2));
+	S[2] -= U[5] * U[6];
+	S[3] -= U[5] * U[7] + U[5] * U[6];
+	S[4] += U[1]/U[0] * .5 * (pow(U[5], 2) + pow(U[6], 2) + pow(U[7], 2)) - 
+		U[5] * (U[5] * U[1]/U[0] + U[6] * U[2]/U[0] + U[7] * U[3]/U[0]);
 	S[5] = 0;
 	S[6] = U[1]/U[0] * U[6] - U[2]/U[0] * U[5];
-	S[7] = -2. * U[1]/U[0] * U[6];
+	S[7] = 2. * U[1]/U[0] * U[7];
 }
 vector<double> NMgdMethods::getSVariables(const double *Ur, const double *Ul)
 {
@@ -369,22 +379,6 @@ vector<vector<double> > NMgdMethods::roeMatrix(const double *Ur, const double *U
 
 	return A_Roe;
 }
-//double NMgdMethods::sound(const double *U, const char *dir)
-//{
-//	//greater magnetogydrodynamic wave
-//	if(!strcmp(dir, "r"))
-//	{
-//		return .125*(pow(U[4], 2) + pow(U[5], 2)/* + pow(U[7], 2)*/)/(NInitial::get_pi() * U[0]) + .5 * pow(sound(U), 2) + .5 * 
-//			sqrt(pow(.25 * (pow(U[4], 2) + pow(U[5], 2)/* + pow(U[7], 2)*/)/(NInitial::get_pi() * U[0]) + pow(sound(U), 2), 2) - 
-//			pow(sound(U) * U[4], 2)/(NInitial::get_pi() * U[0]));
-//	}
-//	else
-//	{
-//		return .125*(pow(U[4], 2) + pow(U[5], 2)/* + pow(U[7], 2)*/)/(NInitial::get_pi() * U[0]) + .5 * pow(sound(U), 2) + .5 * 
-//			sqrt(pow(.25 * (pow(U[4], 2) + pow(U[5], 2)/* + pow(U[7], 2)*/)/(NInitial::get_pi() * U[0]) + pow(sound(U), 2), 2) - 
-//			pow(sound(U) * U[5], 2)/(NInitial::get_pi() * U[0]));
-//	}
-//}
 double NMgdMethods::energy(const double *U)
 {
 	return (U[4] - .5 * (pow(U[5], 2) + pow(U[6], 2) + pow(U[7], 2)))/U[0] 

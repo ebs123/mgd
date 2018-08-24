@@ -15,23 +15,23 @@ void NOther::save(const double ***U, const char *namefile, const double *hr, con
 	FILE *file;
 	NMethods *methods = new NMethods;
 
-	double x, y, ux, uy, uz, p, ro;
+	double r, z, ur, uz, uphi, p, ro;
 
 	file = fopen(namefile, "w");
 	fprintf(file, "%s\n", "TITLE = \" \"");
-	fprintf(file, "%s\n", "variables= \"x\", \"y\", \"ux\", \"uy\", \"uz\", \"p\", \"ro\", \"Hx\", \"Hy\", \"Hz\"");
+	fprintf(file, "%s\n", "variables= \"r\", \"z\", \"ur\", \"uz\", \"uphi\", \"p\", \"ro\", \"Hr\", \"Hz\", \"Hphi\"");
 	fprintf(file, "%s %d %s %d %s\n", "ZONE T=\" \", I=", NInitial::get_ymax(), ", J=", NInitial::get_xmax(), ", F=POINT");
 	for(int i = 0; i <= NInitial::get_xmax() - 1; i++)
 		for(int j = 0; j <= NInitial::get_ymax() - 1; j++)
 		{
-			x = methods->rij1(i, hr);
-			y = methods->zij1(j, hz[0]);
-			ux = U[i][j][1]/U[i][j][0];
-			uy = U[i][j][2]/U[i][j][0];
-			uz = U[i][j][3]/U[i][j][0];
+			r = methods->rij1(i, hr);
+			z = methods->zij1(j, hz[0]);
+			ur = U[i][j][1]/U[i][j][0];
+			uz = U[i][j][2]/U[i][j][0];
+			uphi = U[i][j][3]/U[i][j][0];
 			p = methods->press(U[i][j]);
 			ro = U[i][j][0];
-			fprintf(file, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", x, y, ux, uy, uz, p, ro, U[i][j][5], U[i][j][6], U[i][j][7]);
+			fprintf(file, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", r, z, ur, uz, uphi, p, ro, U[i][j][5], U[i][j][6], U[i][j][7]);
 		}
 
 	fclose(file);
@@ -108,21 +108,21 @@ void NOther::save2dr(const double ***U, const char *namefile, const int j, const
 	FILE *file;
 	NMethods *methods = new NMethods;
 
-	double x, y, z, ux, uy, uz, uphi, p, ro;
+	double r, z, ur, uz, uphi, p, ro;
 
 	file = fopen(namefile, "w");
 	fprintf(file, "%s\n", "TITLE = \" \"");
-	fprintf(file, "%s\n", "variables= \"x\", \"ux\", \"uy\", \"uz\", \"p\", \"ro\", \"Hx\", \"Hy\", \"Hz\"");
+	fprintf(file, "%s\n", "variables= \"r\", \"ur\", \"uz\", \"uphi\", \"p\", \"ro\", \"Hr\", \"Hz\", \"Hphi\"");
 	for(int i = 0; i <= NInitial::get_xmax() - 1; i++)
 	{
-		x = methods->rij1(i, hr);
-		y = methods->zij1(j, hz[0]);
-		ux = U[i][j][1]/U[i][j][0];
-		uy = U[i][j][2]/U[i][j][0];
-		uz = U[i][j][3]/U[i][j][0];
+		r = methods->rij1(i, hr);
+		z = methods->zij1(j, hz[0]);
+		ur = U[i][j][1]/U[i][j][0];
+		uz = U[i][j][2]/U[i][j][0];
+		uphi = U[i][j][3]/U[i][j][0];
 		p = methods->press(U[i][j]);
 		ro  = U[i][j][0];
-		fprintf(file, "%lf %lf %lf %lf %lf %lf %lf %lf %lf\n", x, ux, uy, uz, p, ro, U[i][j][5], U[i][j][6], U[i][j][7]);
+		fprintf(file, "%lf %lf %lf %lf %lf %lf %lf %lf %lf\n", r, ur, uz, uphi, p, ro, U[i][j][5], U[i][j][6], U[i][j][7]);
 	}
 
 	fclose(file);
