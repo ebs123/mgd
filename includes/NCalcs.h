@@ -1,6 +1,7 @@
 #pragma once
 #include "NMgdMethods.h"
 //#include "NTracer.h"
+#include <omp.h>
 
 #ifndef isnan 
 #define isnan(x) ((x)!=(x)) 

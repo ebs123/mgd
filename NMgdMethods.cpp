@@ -427,6 +427,7 @@ double*** NMgdMethods::korrectH(const double ***U, const double *hr, const doubl
 
 	//	exit(1);
 
+#pragma omp parallel for collapse(2)
 	for(int i = 0; i <= NInitial::get_xmax() - 1; i++)
 		for(int j = 0; j <= NInitial::get_ymax() - 1; j++)
 		{

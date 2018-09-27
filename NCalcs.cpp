@@ -48,7 +48,7 @@ void NCalcs::resid(double ***U, double ***Re,	const double *hr, const double *hz
 	NArrPacker<double> *U_pack = new NArrPacker<double>(DUMMY_NUM2, sizes, NInitial::getPeriodicName(), NInitial::getSlipName(), (void*)U);
 	double*** U_pack_arr = (double***)U_pack->getPackArr();
 
-
+#pragma omp parallel for collapse(2)
 	for(int i = 0; i <= NInitial::get_xmax() - 1; i++)
 		for(int j = 0; j <= NInitial::get_ymax() - 1; j++)
 		{
@@ -789,6 +789,7 @@ void NCalcs::restrict(double ***U, double &t, const double *hr, const double *hz
 
 	NMgdMethods *methods = new NMgdMethods;
 
+#pragma omp parallel for collapse(2)
 	for(int i = 0; i <= NInitial::get_xmax() - 1; i++)
 		for(int j = 0; j <= NInitial::get_ymax() - 1; j++)
 		{
@@ -798,6 +799,7 @@ void NCalcs::restrict(double ***U, double &t, const double *hr, const double *hz
 	
 	t = tau[0][0];
 
+#pragma omp parallel for collapse(2)
 	for(int i = 0; i <= NInitial::get_xmax() - 1; i++)
 		for(int j = 0; j <= NInitial::get_ymax() - 1; j++)
 			t = min(t, tau[i][j]);
@@ -829,8 +831,9 @@ void NCalcs::solve(double ***U, double &R2, double &R3, double &R4, double &R5, 
 	restrict(U, tau, hr, hz);
 
 	resid(U, Re, hr, hz, Rv);
-//Euler method
 
+//Euler method
+#pragma omp parallel for collapse(2)
 	for(int i = 0; i <= NInitial::get_xmax() - 1; i++)
 		for(int j = 0; j <= NInitial::get_ymax() - 1; j++)
 		{ 	
@@ -853,6 +856,7 @@ void NCalcs::solve(double ***U, double &R2, double &R3, double &R4, double &R5, 
 
 	korrH = methods->korrectH(const_cast<const double***>(U), hr, hz, tau);
 
+#pragma omp parallel for collapse(2)
 	for(int i = 0; i <= NInitial::get_xmax() - 1; i++)
 		for(int j = 0; j <= NInitial::get_ymax() - 1; j++)
 		{
@@ -947,19 +951,19 @@ void NCalcs::solve(double ***U, double &R2, double &R3, double &R4, double &R5, 
 		//	}
 
 
-	R2=Re[0][0][0];
+	//R2=Re[0][0][0];
 
-	for(int i = 0; i <= NInitial::get_xmax() - 1; i++)
-		for(int j = 0; j <= NInitial::get_ymax() - 1; j++)
-			for(int k = 0; k <= NInitial::getNcomp() - 1; k++)
-				R2=max(R2,Re[i][j][k]);
+	//for(int i = 0; i <= NInitial::get_xmax() - 1; i++)
+	//	for(int j = 0; j <= NInitial::get_ymax() - 1; j++)
+	//		for(int k = 0; k <= NInitial::getNcomp() - 1; k++)
+	//			R2=max(R2,Re[i][j][k]);
 
-	R3=Re[0][0][0];
+	//R3=Re[0][0][0];
 
-	for(int i = 0; i <= NInitial::get_xmax() - 1; i++)
-		for(int j = 0; j <= NInitial::get_ymax() - 1; j++)
-			for(int k = 0; k <= NInitial::getNcomp() - 1; k++)
-				R3=min(R3,Re[i][j][k]);
+	//for(int i = 0; i <= NInitial::get_xmax() - 1; i++)
+	//	for(int j = 0; j <= NInitial::get_ymax() - 1; j++)
+	//		for(int k = 0; k <= NInitial::getNcomp() - 1; k++)
+	//			R3=min(R3,Re[i][j][k]);
 
 	//R4=Rv[0][0][0];
 

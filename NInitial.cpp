@@ -133,12 +133,13 @@ void NInitial::initial(double ***U, const double *hr, const double *hz)
 		cout << "Can't create methods";
 	
 	double rij, uz, ur, uphi, zij, p;
+	const double Hz = 1, omega1 = 0, omega2 = 1;
 	/****************Orszag–Tang MHD turbulence problem
 	//const double gamma = 1.6666666666666666666666666666667;
 	/********************************************
-	/********** распад МГД-разрыва ******************/
+	/********** распад МГД-разрыва ******************
 	const double roLeft = 1, roRight = .125, pLeft = 1, pRight = .1, HzLeft = 1, HzRight = -1, Hr = .75;
-	/***********************************************/
+	***********************************************/
 	/****************Kelvin-Helmgoltz instability
 	const double a = 1, u0 = 2, u0_tilda = .008, lambda = 15.707963267948966192313216916398;
 	**********************************************/
@@ -149,6 +150,22 @@ void NInitial::initial(double ***U, const double *hr, const double *hz)
 			//R2 = R1 + deltar;
 			rij = methods->rij1(i, hr);
 			zij = methods->zij1(j, hz[0]);
+
+			p = roin * (0.3333333 * pow(omega2 * pow(R1 + deltar, 2) - omega1 * pow(R1, 2), 2) * (pow(R1 + deltar, 3) - pow(R1, 3)) + 
+				2 * (omega1 - omega2) * pow((R1 + deltar) * R1, 2) * (omega2 * pow(R1 + deltar, 2) - omega1 * pow(R1, 2)) * deltar - 
+				pow((R1 + deltar) * R1, 4) * pow(omega1 - omega2, 2) * (1/(R1 + deltar) - 1/R1))/(rij * pow(pow(R1 + deltar, 2) - pow(R1, 2), 2)) - 
+				.5 * pow(Hz, 2) * deltar;
+
+			uphi = (omega2 * pow(R1 + deltar, 2) - omega1 * pow(R1, 2))/(pow(R1 + deltar, 2) - pow(R1, 2)) * rij +
+				(omega1 - omega2) * pow(R1 + deltar, 2) * pow(R1, 2)/((pow(R1 + deltar, 2) - pow(R1, 2)) * rij);
+			U[i][j][0] = roin;
+			U[i][j][1] = 0.;
+			U[i][j][2] = 0.;
+			U[i][j][3] = roin * uphi;
+			U[i][j][4] = .5 * roin * pow(uphi, 2) + .5 * pow(Hz, 2) + p/sigma;
+			U[i][j][5] = 0.;
+			U[i][j][6] = Hz;
+			U[i][j][7] = 0.;
 			/*****************Orszag–Tang MHD turbulence problem*/
 			/*U[i][j][0] = pow(gamma, 2);
 			U[i][j][1] = - U[i][j][0] * sin(zij);
@@ -171,12 +188,12 @@ void NInitial::initial(double ***U, const double *hr, const double *hz)
 			U[i][j][6] = 0.;
 			U[i][j][7] = Hz0;
 			*****************/
-			/********** распад МГД-разрыва ******************/
+			/********** распад МГД-разрыва ******************
 
 			uz = 0.;
 			ur = 0.;
 			uphi = 0.;
-			if(rij < 1)
+			if(rij < 2)
 			{
 				p = pLeft;
 				U[i][j][6] = HzLeft;
@@ -199,7 +216,7 @@ void NInitial::initial(double ***U, const double *hr, const double *hz)
 
 			U[i][j][7] = H[0];
 			U[i][j][5] = Hr;
-			/******************************/
+			******************************/
 		}
 
 	delete methods;
