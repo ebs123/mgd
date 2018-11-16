@@ -1,4 +1,4 @@
-#include "mesh_generator.h"
+#include "includes\mesh_generator.h"
 
 CMeshGenerator::mesh_generator(double *fp_domain_length, double *fp_mesh_size, int f_dimension) : mp_domain_length(fp_domain_length), 
 	mp_mesh_size(fp_mesh_size), m_mesh_dimension(f_dimension)
@@ -28,13 +28,18 @@ double* CMeshGenerator::getMeshComponent(int f_component_number)
 
 	for(size_t i = 0; i < mp_mesh_size[f_component_number]; i++)
 	{
-		mp_x_i[f_component_number][i] = i * dx;
+		mp_x_i[f_component_number][i] = (i + .5) * dx;
 	}
 
 	return mp_x_i[f_component_number];
 }
 
-double* CMeshGenerator::getNumCells()
+int* CMeshGenerator::getNumCells()
 {
 	return mp_mesh_size;
+}
+
+double CMeshGenerator::getMeshStep(int f_component_number)
+{
+	return mp_domain_length[f_component_number]/(mp_mesh_size[f_component_number] - 1);
 }

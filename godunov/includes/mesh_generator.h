@@ -14,5 +14,6 @@ public:
 	~mesh_generator(void);
 
 	double* getMeshComponent(int f_component_number);
+	double getMeshStep(int f_component_number);
 	int* getNumCells();
 };
