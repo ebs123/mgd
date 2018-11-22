@@ -1,4 +1,6 @@
 #pragma once
+#include "mesh_generator.h"
+#include <stdio.h>
 
 class COutput
 {

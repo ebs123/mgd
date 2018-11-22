@@ -1,6 +1,6 @@
 #include "includes\mesh_generator.h"
 
-CMeshGenerator::mesh_generator(double *fp_domain_length, double *fp_mesh_size, int f_dimension) : mp_domain_length(fp_domain_length), 
+CMeshGenerator::CMeshGenerator(double *fp_domain_length, int *fp_mesh_size, int f_dimension) : mp_domain_length(fp_domain_length), 
 	mp_mesh_size(fp_mesh_size), m_mesh_dimension(f_dimension)
 {
 	mp_x_i = new double*[m_mesh_dimension];
@@ -10,7 +10,7 @@ CMeshGenerator::mesh_generator(double *fp_domain_length, double *fp_mesh_size, i
 	}
 }
 
-CMeshGenerator::~mesh_generator(void)
+CMeshGenerator::~CMeshGenerator(void)
 {
 	delete []mp_domain_length;
 	delete []mp_mesh_size;

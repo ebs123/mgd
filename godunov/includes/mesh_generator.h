@@ -9,9 +9,9 @@ private:
 	double **mp_x_i;
 
 public:
-	mesh_generator(double *fp_domain_length, int *fp_mesh_size, int f_dimension);
+	CMeshGenerator(double *fp_domain_length, int *fp_mesh_size, int f_dimension);
 
-	~mesh_generator(void);
+	~CMeshGenerator(void);
 
 	double* getMeshComponent(int f_component_number);
 	double getMeshStep(int f_component_number);

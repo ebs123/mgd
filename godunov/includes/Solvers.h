@@ -1,24 +1,22 @@
 #pragma once
 #include "boundary_conds.h"
-#include "mesh_generator.h"
+
+#include "Output.h"
+
 #include <algorithm>
 #include <sstream>
 
 class CSolvers
 {
 private:
-	double **R;//[i][j] - [x][y]
-	double **U;
-	double **V;
-	double **P;
 
 public:
-	CSolvers(int num_cells_x, int num_cells_y);
+	CSolvers();
 
 	void linearSolver(int* numcells, double** R, double** U, double** V, double** P, double*** dss, double*** uss, 
 							 double*** vss, double*** pss);
-	double getTimeIncrement(double** U, double** V, CMeshGenerator* mesh);
-	void solve();
+	double getTimeIncrement(double** R, double** U, double** V, double** P, CMeshGenerator* mesh);
+	void solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* mesh);
 
 	~CSolvers(void);
 };

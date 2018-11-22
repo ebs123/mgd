@@ -1,43 +1,19 @@
 #include "includes\Solvers.h"
 
-CSolvers::CSolvers(int num_cells_x, int num_cells_y)
+CSolvers::CSolvers()
 {
-	R = new double*[num_cells_x];
-	U = new double*[num_cells_x];
-	V = new double*[num_cells_x];
-	P = new double*[num_cells_x];
-
-	for(size_t i = 0; i < num_cells_x; i++)
-	{
-		R[i] = new double*[num_cells_y];
-		U[i] = new double*[num_cells_y];
-		V[i] = new double*[num_cells_y];
-		P[i] = new double*[num_cells_y];
-	}
 }
 
 CSolvers::~CSolvers(void)
 {
-	for(size_t i = 0; i < num_cells_x; i++)
-	{
-		delete []R[i];
-		delete []U[i];
-		delete []V[i];
-		delete []P[i];
-	}
-
-	delete []R;
-	delete []U;
-	delete []V;
-	delete []P;
 }
 
-void CSolvers::linear_solver(int* numcells, double** R, double** U, double** V, double** P, double*** dss, double*** uss, 
+void CSolvers::linearSolver(int* numcells, double** R, double** U, double** V, double** P, double*** dss, double*** uss, 
 							 double*** vss, double*** pss)
 {
-	double **C = new double[numcells[0]];
-	double **RC = new double[numcells[0]];
-	double **H = new double[numcells[0]];
+	double **C = new double*[numcells[0]];
+	double **RC = new double*[numcells[0]];
+	double **H = new double*[numcells[0]];
 
 	for(size_t i = 0; i < numcells[0]; i++)
 	{
@@ -174,18 +150,18 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 	pss = new double**[2];
 	for(size_t i = 0; i < 2; i++)
 	{
-		dss[i] = new double*[num_cells[0]];
-		uss[i] = new double*[num_cells[0]];
-		vss[i] = new double*[num_cells[0]];
-		pss[i] = new double*[num_cells[0]];
+		dss[i] = new double*[num_cells[0] + 1];
+		uss[i] = new double*[num_cells[0] + 1];
+		vss[i] = new double*[num_cells[0] + 1];
+		pss[i] = new double*[num_cells[0] + 1];
 	}
 	for(size_t i = 0; i < 2; i++)
-		for(size_t j = 0; j < num_cells[0]; j++)
+		for(size_t j = 0; j < num_cells[0] + 1; j++)
 		{
-			dss[i][j] = new double[num_cells[1]];
-			uss[i][j] = new double[num_cells[1]];
-			vss[i][j] = new double[num_cells[1]];
-			pss[i][j] = new double[num_cells[1]];
+			dss[i][j] = new double[num_cells[1] + 1];
+			uss[i][j] = new double[num_cells[1] + 1];
+			vss[i][j] = new double[num_cells[1] + 1];
+			pss[i][j] = new double[num_cells[1] + 1];
 		}
 
 	double ***FR, ***FRU, ***FRV, ***FRE;
@@ -196,18 +172,18 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 	FRE = new double**[2];
 	for(size_t i = 0; i < 2; i++)
 	{
-		FR[i] = new double*[num_cells[0]];
-		FRU[i] = new double*[num_cells[0]];
-		FRV[i] = new double*[num_cells[0]];
-		FRE[i] = new double*[num_cells[0]];
+		FR[i] = new double*[num_cells[0] + 1];
+		FRU[i] = new double*[num_cells[0] + 1];
+		FRV[i] = new double*[num_cells[0] + 1];
+		FRE[i] = new double*[num_cells[0] + 1];
 	}
 	for(size_t i = 0; i < 2; i++)
-		for(size_t j = 0; j < num_cells[0]; j++)
+		for(size_t j = 0; j < num_cells[0] + 1; j++)
 		{
-			FR[i][j] = new double[num_cells[1]];
-			FRU[i][j] = new double[num_cells[1]];
-			FRV[i][j] = new double[num_cells[1]];
-			FRE[i][j] = new double[num_cells[1]];
+			FR[i][j] = new double[num_cells[1] + 1];
+			FRU[i][j] = new double[num_cells[1] + 1];
+			FRV[i][j] = new double[num_cells[1] + 1];
+			FRE[i][j] = new double[num_cells[1] + 1];
 		}
 
 	double **R, **RU, **RV, **RE;
@@ -224,16 +200,14 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 		RE[i] = new double[num_cells[1]];
 	}
 
-	double **R, **U, **V, **P, **S;
+	double **U, **V, **P, **S;
 
-	R = new double*[num_cells[0]];
 	U = new double*[num_cells[0]];
 	V = new double*[num_cells[0]];
 	P = new double*[num_cells[0]];
 	S = new double*[num_cells[0]];
 	for(size_t i = 0; i < num_cells[0]; i++)
 	{
-		R[i] = new double[num_cells[1]];
 		U[i] = new double[num_cells[1]];
 		V[i] = new double[num_cells[1]];
 		P[i] = new double[num_cells[1]];
@@ -245,14 +219,20 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 	V = V_init[2];
 	P = V_init[3];
 
+	double time = 0.;
+
 	for(int step = 1; step < n_steps; step++)
 	{
-		bound->boundary_flows(R, U, V, P, dss, uss, vss, pss, numcells);
-		linear_solver(num_cells, R, U, V, P, dss, uss, vss, pss);
+		double dt = getTimeIncrement(R, U, V, P, mesh);
+		time += dt;
+
+		printf("step %d, time %d\n", step, time);
+		bound->boundary_flows(R, U, V, P, dss, uss, vss, pss, num_cells);
+		linearSolver(num_cells, R, U, V, P, dss, uss, vss, pss);
 
 #pragma omp parallel for collapse(2)
-			for(int i = 0; i <= numcells[0]; i++)
-				for(int j = 0; j <= numcells[1]; j++)
+			for(int i = 0; i <= num_cells[0]; i++)
+				for(int j = 0; j <= num_cells[1]; j++)
 			{
 				FR[0][i][j] = dss[0][i][j] * uss[0][i][j];
 				FRU[0][i][j] = dss[0][i][j] * uss[0][i][j] * uss[0][i][j] + pss[0][i][j];
@@ -267,11 +247,9 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 					pss[1][i][j] * vss[1][i][j];
 			}
 
-			double dt = getTimeIncrement(U, V, mesh);
-
 #pragma omp parallel for collapse(2)
-			for(int i = 0; i <= numcells[0]; i++)
-				for(int j = 0; j <= numcells[1]; j++)
+			for(int i = 0; i < num_cells[0]; i++)
+				for(int j = 0; j < num_cells[1]; j++)
 			{
 				R[i][j] = R[i][j] - dt/dx * (FR[0][i + 1][j] - FR[0][i][j]) - dt/dy * (FR[1][i + 1][j] - FR[1][i][j]);
 				RU[i][j] = RU[i][j] - dt/dx * (FRU[0][i + 1][j] - FRU[0][i][j]) - dt/dy * (FRU[1][i + 1][j] - FRU[1][i][j]);
@@ -280,8 +258,8 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 			}
 
 #pragma omp parallel for collapse(2)
-			for(int i = 0; i <= numcells[0]; i++)
-				for(int j = 0; j <= numcells[1]; j++)
+			for(int i = 0; i < num_cells[0]; i++)
+				for(int j = 0; j < num_cells[1]; j++)
 				{
 					U[i][j] = RU[i][j] / R[i][j];
 					V[i][j] = RV[i][j] / R[i][j];
@@ -301,7 +279,7 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 	delete output;
 
 	for(size_t i = 0; i < 2; i++)
-		for(size_t j = 0; j < num_cells[0]; j++)
+		for(size_t j = 0; j < num_cells[0] + 1; j++)
 		{
 			delete []dss[i][j];
 			delete []uss[i][j];
@@ -321,7 +299,7 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 	delete []pss;
 
 	for(size_t i = 0; i < 2; i++)
-		for(size_t j = 0; j < num_cells[0]; j++)
+		for(size_t j = 0; j < num_cells[0] + 1; j++)
 		{
 			delete []FR[i][j];
 			delete []FRU[i][j];
@@ -339,27 +317,52 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 	delete []FRU;
 	delete []FRV;
 	delete []FRE;
+
+	for(size_t i = 0; i < num_cells[0]; i++)
+	{
+		delete []R[i];
+		delete []RU[i];
+		delete []RV[i];
+		delete []RE[i];
+	}
+	delete []R;
+	delete []RU;
+	delete []RV;
+	delete []RE;
+
+
+	for(size_t i = 0; i < num_cells[0]; i++)
+	{
+		delete []U[i];
+		delete []V[i];
+		delete []P[i];
+		delete []S[i];
+	}
+	delete []U;
+	delete []V;
+	delete []P;
+	delete []S;
 }
 
-double CSolvers::getTimeIncrement(double** U, double** V, CMeshGenerator* mesh)
+double CSolvers::getTimeIncrement(double** R, double** U, double** V, double** P, CMeshGenerator* mesh)
 {
+	double c;
 	double velocity_max = U[0][0];
 
     for(int i = 0; i < mesh->getNumCells()[0]; i++)
     {
 		for(int j = 0; j < mesh->getNumCells()[1]; j++)
 		{
-		  if(U[i][j] > velocity_max)
-		  {
-			  velocity_max = U[i][j];
-		  }
+			c = sqrt(GAMMA * P[i][j]/R[i][j]);
+			velocity_max = U[i][j] > velocity_max ? U[i][j] : velocity_max;
+			velocity_max = V[i][j] > velocity_max ? V[i][j] : velocity_max;
+			velocity_max = V[i][j] - c > velocity_max ? V[i][j] - c : velocity_max;
+			velocity_max = V[i][j] + c > velocity_max ? V[i][j] + c : velocity_max;
+			velocity_max = U[i][j] - c > velocity_max ? U[i][j] - c : velocity_max;
+			velocity_max = U[i][j] + c > velocity_max ? U[i][j] + c : velocity_max;
 
-		  if(V[i][j] > velocity_max)
-		  {
-			  velocity_max = V[i][j];
-		  }
 		}
 	}
 
-	return CFL * min(mesh->getMeshStep(0), mesh->getMeshStep(1)) / velocity_max;
+	return CFL * std::min(mesh->getMeshStep(0), mesh->getMeshStep(1)) / velocity_max;
 }

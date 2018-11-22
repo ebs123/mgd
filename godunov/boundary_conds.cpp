@@ -9,7 +9,7 @@ CBoundaryConds::~CBoundaryConds(void)
 }
 
 void CBoundaryConds::boundary_flows(double **R, double **U, double **V, double **P, double*** dss, double*** uss, double*** vss, 
-					double*** pss, double *numcells)
+					double*** pss, int *numcells)
 {
 	double c0, s0, cn, sn;
 
