@@ -2,7 +2,7 @@
 #include "boundary_conds.h"
 
 #include "Output.h"
-
+#include "NTracer.h"
 #include <algorithm>
 #include <sstream>
 

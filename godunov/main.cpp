@@ -25,6 +25,7 @@ int main(int argc, char* argv)
 	num_cells[0] = mesh->getNumCells()[0];
 	num_cells[1] = mesh->getNumCells()[1];
 
+	NTracer::openFile("flowTrace.dat");
 	V_init = new double**[4];//r,u,v,p
 	for(size_t i = 0; i < 4; i++)
 	{
@@ -46,11 +47,11 @@ int main(int argc, char* argv)
 			V_init[2][i][j] = 0.;
 			if(x[i] < domain_length[0] * .5)
 			{
-				V_init[3][i][j] = 0.;
+				V_init[3][i][j] = 1.;
 			}
 			else
 			{
-				V_init[3][i][j] = 1.;
+				V_init[3][i][j] = 2.;
 			}
 		}
 

@@ -23,97 +23,113 @@ void CSolvers::linearSolver(int* numcells, double** R, double** U, double** V, d
 	}
 
 #pragma omp parallel for collapse(2)
-	for(int i = 1; i < numcells[0]; i++)
-		for(int j = 1; j < numcells[1]; j++)
+	for(int i = 0; i < numcells[0]; i++)
+		for(int j = 0; j < numcells[1]; j++)
 		{
-			C[i - 1][j] = sqrt(GAMMA*P[i - 1][j] / R[i - 1][j]);
+			if(i == 0 & j == 0)
+				continue;
+
+			if(i > 0)
+			{
+				C[i - 1][j] = sqrt(GAMMA*P[i - 1][j] / R[i - 1][j]);
+				RC[i - 1][j] = R[i - 1][j] * C[i - 1][j];
+				H[i - 1][j] = 1.0 / (RC[i - 1][j]);
+			}
+
 			C[i][j] = sqrt(GAMMA*P[i][j] / R[i][j]);
-			C[i][j - 1] = sqrt(GAMMA*P[i][j - 1] / R[i][j - 1]);
 
-			RC[i - 1][j] = R[i - 1][j] * C[i - 1][j];
+			if(j > 0)
+			{
+				C[i][j - 1] = sqrt(GAMMA*P[i][j - 1] / R[i][j - 1]);
+				RC[i][j - 1] = R[i][j - 1] * C[i][j - 1];
+				H[i][j - 1] = 1.0 / (RC[i][j - 1]);
+			}
+
 			RC[i][j] = R[i][j] * C[i][j];
-			RC[i][j - 1] = R[i][j - 1] * C[i][j - 1];
 
-			H[i - 1][j] = 1.0 / (RC[i - 1][j]);
 			H[i][j] = 1.0 / (RC[i][j]);
-			H[i][j - 1] = 1.0 / (RC[i][j - 1]);
 
 			//one direction
-			if(U[i - 1][j] > C[i - 1][j])
+			if(i > 0)
 			{
-				pss[0][i][j] = P[i - 1][j];
-				uss[0][i][j] = U[i - 1][j];
-				dss[0][i][j] = R[i - 1][j];
-				vss[0][i][j] = V[i - 1][j];
-			}
-			else if (U[i][j] < -C[i][j])
-			{
-				pss[0][i][j] = P[i][j];
-				uss[0][i][j] = U[i][j];
-				dss[0][i][j] = R[i][j];
-				vss[0][i][j] = V[i][j];
-			}
-			else
-			{
-				pss[0][i][j] = (U[i - 1][j] - U[i][j] + P[i - 1][j] * H[i - 1][j] + P[i][j] * H[i][j]) / 
-					(H[i - 1][j] + H[i][j]);
-				uss[0][i][j] = (RC[i - 1][j] * U[i - 1][j] + RC[i][j] * U[i][j] + P[i - 1][j] - P[i][j]) / 
-					(RC[i - 1][j] + RC[i][j]);
-
-				//if (uss[i] > 0) dss[i] = R[i - 1] - R[i - 1] / C[i - 1] * (uss[i] - U[i - 1]);
-				//else dss[i] = R[i] + R[i] / C[i] * (uss[i] - U[i]);
-
-				if (uss[0][i][j] > 0)
+				if(U[i - 1][j] > C[i - 1][j])
 				{
-					dss[0][i][j] = R[i - 1][j] * (1 + (pss[0][i][j] - P[i - 1][j])/(RC[i - 1][j] * 
-						C[i - 1][j]));
+					pss[0][i][j] = P[i - 1][j];
+					uss[0][i][j] = U[i - 1][j];
+					dss[0][i][j] = R[i - 1][j];
 					vss[0][i][j] = V[i - 1][j];
 				}
-				else
+				else if (U[i][j] < -C[i][j])
 				{
-					dss[0][i][j] = R[i][j] * (1 + (pss[0][i][j] - P[i][j])/(RC[i][j] * C[i][j]));
+					pss[0][i][j] = P[i][j];
+					uss[0][i][j] = U[i][j];
+					dss[0][i][j] = R[i][j];
 					vss[0][i][j] = V[i][j];
 				}
-			}
-
-			//two direction
-			if(V[i][j - 1] > C[i][j - 1])
-			{
-				pss[1][i][j] = P[i][j - 1];
-				uss[1][i][j] = U[i][j - 1];
-				dss[1][i][j] = R[i][j - 1];
-				vss[1][i][j] = V[i][j - 1];
-			}
-			else if (V[i][j] < -C[i][j])
-			{
-				pss[1][i][j] = P[i][j];
-				uss[1][i][j] = U[i][j];
-				dss[1][i][j] = R[i][j];
-				vss[1][i][j] = V[i][j];
-			}
-			else
-			{
-				pss[1][i][j] = (V[i][j - 1] - V[i][j] + P[i][j - 1] * H[i][j - 1] + P[i][j] * H[i][j]) / 
-					(H[i][j - 1] + H[i][j]);
-				vss[1][i][j] = (RC[i][j - 1] * V[i][j - 1] + RC[i][j] * V[i][j] + P[i][j - 1] - P[i][j]) / 
-					(RC[i][j - 1] + RC[i][j]);
-
-				//if (uss[i] > 0) dss[i] = R[i - 1] - R[i - 1] / C[i - 1] * (uss[i] - U[i - 1]);
-				//else dss[i] = R[i] + R[i] / C[i] * (uss[i] - U[i]);
-
-				if (vss[1][i][j] > 0)
+				else
 				{
-					dss[1][i][j] = R[i][j - 1] * (1 + (pss[1][i][j] - P[i][j - 1])/(RC[i][j - 1] * 
-						C[i][j - 1]));
-					uss[1][i][j] = U[i - 1][j];
+					pss[0][i][j] = (U[i - 1][j] - U[i][j] + P[i - 1][j] * H[i - 1][j] + P[i][j] * H[i][j]) / 
+						(H[i - 1][j] + H[i][j]);
+					uss[0][i][j] = (RC[i - 1][j] * U[i - 1][j] + RC[i][j] * U[i][j] + P[i - 1][j] - P[i][j]) / 
+						(RC[i - 1][j] + RC[i][j]);
+
+					//if (uss[i] > 0) dss[i] = R[i - 1] - R[i - 1] / C[i - 1] * (uss[i] - U[i - 1]);
+					//else dss[i] = R[i] + R[i] / C[i] * (uss[i] - U[i]);
+
+					if (uss[0][i][j] > 0)
+					{
+						dss[0][i][j] = R[i - 1][j] * (1 + (pss[0][i][j] - P[i - 1][j])/(RC[i - 1][j] * 
+							C[i - 1][j]));
+						vss[0][i][j] = V[i - 1][j];
+					}
+					else
+					{
+						dss[0][i][j] = R[i][j] * (1 + (pss[0][i][j] - P[i][j])/(RC[i][j] * C[i][j]));
+						vss[0][i][j] = V[i][j];
+					}
+				}
+			}
+
+			if(j > 0)
+			{
+				//two direction
+				if(V[i][j - 1] > C[i][j - 1])
+				{
+					pss[1][i][j] = P[i][j - 1];
+					uss[1][i][j] = U[i][j - 1];
+					dss[1][i][j] = R[i][j - 1];
+					vss[1][i][j] = V[i][j - 1];
+				}
+				else if (V[i][j] < -C[i][j])
+				{
+					pss[1][i][j] = P[i][j];
+					uss[1][i][j] = U[i][j];
+					dss[1][i][j] = R[i][j];
+					vss[1][i][j] = V[i][j];
 				}
 				else
 				{
-					dss[1][i][j] = R[i][j] * (1 + (pss[1][i][j] - P[i][j])/(RC[i][j] * C[i][j]));
-					uss[1][i][j] = U[i][j];
+					pss[1][i][j] = (V[i][j - 1] - V[i][j] + P[i][j - 1] * H[i][j - 1] + P[i][j] * H[i][j]) / 
+						(H[i][j - 1] + H[i][j]);
+					vss[1][i][j] = (RC[i][j - 1] * V[i][j - 1] + RC[i][j] * V[i][j] + P[i][j - 1] - P[i][j]) / 
+						(RC[i][j - 1] + RC[i][j]);
+
+					//if (uss[i] > 0) dss[i] = R[i - 1] - R[i - 1] / C[i - 1] * (uss[i] - U[i - 1]);
+					//else dss[i] = R[i] + R[i] / C[i] * (uss[i] - U[i]);
+
+					if (vss[1][i][j] > 0)
+					{
+						dss[1][i][j] = R[i][j - 1] * (1 + (pss[1][i][j] - P[i][j - 1])/(RC[i][j - 1] * 
+							C[i][j - 1]));
+						uss[1][i][j] = U[i - 1][j];
+					}
+					else
+					{
+						dss[1][i][j] = R[i][j] * (1 + (pss[1][i][j] - P[i][j])/(RC[i][j] * C[i][j]));
+						uss[1][i][j] = U[i][j];
+					}
 				}
 			}
-
 		}
 
 	for(size_t i = 0; i < numcells[0]; i++)
@@ -219,6 +235,15 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 	V = V_init[2];
 	P = V_init[3];
 
+#pragma omp parallel for collapse(2)
+	for(int i = 0; i < num_cells[0]; i++)
+		for(int j = 0; j < num_cells[1]; j++)
+	{
+		RU[i][j] = R[i][j] * U[i][j];
+		RV[i][j] = R[i][j] * V[i][j];
+		RE[i][j] = P[i][j] / (GAMMA - 1.0) + 0.5 * R[i][j] * U[i][j] * U[i][j] + 0.5 * R[i][j] * V[i][j] * V[i][j];
+	}
+
 	double time = 0.;
 
 	for(int step = 1; step < n_steps; step++)
@@ -230,49 +255,68 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 		bound->boundary_flows(R, U, V, P, dss, uss, vss, pss, num_cells);
 		linearSolver(num_cells, R, U, V, P, dss, uss, vss, pss);
 
+			double *traceData = new double[10];
 #pragma omp parallel for collapse(2)
-			for(int i = 0; i <= num_cells[0]; i++)
-				for(int j = 0; j <= num_cells[1]; j++)
-			{
-				FR[0][i][j] = dss[0][i][j] * uss[0][i][j];
-				FRU[0][i][j] = dss[0][i][j] * uss[0][i][j] * uss[0][i][j] + pss[0][i][j];
-				FRV[0][i][j] = dss[0][i][j] * uss[0][i][j] * vss[0][i][j];
-				FRE[0][i][j] = (pss[0][i][j] / (GAMMA - 1.0) + 0.5*dss[0][i][j] * (uss[0][i][j] * uss[0][i][j] + vss[0][i][j] * vss[0][i][j]))*uss[0][i][j] + 
-					pss[0][i][j] * uss[0][i][j];
+		for(int i = 0; i <= num_cells[0]; i++)
+			for(int j = 0; j <= num_cells[1]; j++)
+		{
+			FR[0][i][j] = dss[0][i][j] * uss[0][i][j];
+			FRU[0][i][j] = dss[0][i][j] * uss[0][i][j] * uss[0][i][j] + pss[0][i][j];
+			FRV[0][i][j] = dss[0][i][j] * uss[0][i][j] * vss[0][i][j];
+			FRE[0][i][j] = (pss[0][i][j] / (GAMMA - 1.0) + 0.5*dss[0][i][j] * (uss[0][i][j] * uss[0][i][j] + vss[0][i][j] * vss[0][i][j]))*uss[0][i][j] + 
+				pss[0][i][j] * uss[0][i][j];
 
-				FR[1][i][j] = dss[1][i][j] * vss[1][i][j];
-				FRV[1][i][j] = dss[1][i][j] * vss[1][i][j] * vss[1][i][j] + pss[1][i][j];
-				FRU[1][i][j] = dss[1][i][j] * uss[1][i][j] * vss[1][i][j];
-				FRE[1][i][j] = (pss[1][i][j] / (GAMMA - 1.0) + 0.5*dss[1][i][j] * (uss[1][i][j] * uss[1][i][j] + vss[1][i][j] * vss[1][i][j]))*vss[1][i][j] + 
-					pss[1][i][j] * vss[1][i][j];
+			FR[1][i][j] = dss[1][i][j] * vss[1][i][j];
+			FRV[1][i][j] = dss[1][i][j] * vss[1][i][j] * vss[1][i][j] + pss[1][i][j];
+			FRU[1][i][j] = dss[1][i][j] * uss[1][i][j] * vss[1][i][j];
+			FRE[1][i][j] = (pss[1][i][j] / (GAMMA - 1.0) + 0.5*dss[1][i][j] * (uss[1][i][j] * uss[1][i][j] + vss[1][i][j] * vss[1][i][j]))*vss[1][i][j] + 
+				pss[1][i][j] * vss[1][i][j];
+
+
+			traceData[0] = i;
+			traceData[1] = j;
+			traceData[2] = dss[0][i][j];
+			traceData[3] = uss[0][i][j];
+			traceData[4] = vss[0][i][j];
+			traceData[5] = pss[0][i][j];
+			traceData[6] = dss[1][i][j];
+			traceData[7] = uss[1][i][j];
+			traceData[8] = vss[1][i][j];
+			traceData[9] = pss[1][i][j];
+			NTracer::traceToFile(traceData, "double", 10);
+		}
+
+			delete []traceData;
+			exit(1);
+
+
+
+#pragma omp parallel for collapse(2)
+		for(int i = 0; i < num_cells[0]; i++)
+			for(int j = 0; j < num_cells[1]; j++)
+		{
+			R[i][j] = R[i][j] - dt/dx * (FR[0][i + 1][j] - FR[0][i][j]) - dt/dy * (FR[1][i + 1][j] - FR[1][i][j]);
+			RU[i][j] = RU[i][j] - dt/dx * (FRU[0][i + 1][j] - FRU[0][i][j]) - dt/dy * (FRU[1][i + 1][j] - FRU[1][i][j]);
+			RV[i][j] = RV[i][j] - dt/dx * (FRU[0][i + 1][j] - FRU[0][i][j]) - dt/dy * (FRU[1][i + 1][j] - FRU[1][i][j]);
+			RE[i][j] = RE[i][j] - dt/dx * (FRE[0][i + 1][j] - FRE[0][i][j]) - dt/dy * (FRE[1][i + 1][j] - FRE[1][i][j]);
+		}
+
+#pragma omp parallel for collapse(2)
+		for(int i = 0; i < num_cells[0]; i++)
+			for(int j = 0; j < num_cells[1]; j++)
+			{
+				U[i][j] = RU[i][j] / R[i][j];
+				V[i][j] = RV[i][j] / R[i][j];
+				P[i][j] = (GAMMA - 1.0) * (RE[i][j] - 0.5 * RU[i][j] * U[i][j] - 0.5 * RV[i][j] * V[i][j]);
+				S[i][j] = log(P[i][j] / pow(R[i][j], GAMMA));
 			}
 
-#pragma omp parallel for collapse(2)
-			for(int i = 0; i < num_cells[0]; i++)
-				for(int j = 0; j < num_cells[1]; j++)
-			{
-				R[i][j] = R[i][j] - dt/dx * (FR[0][i + 1][j] - FR[0][i][j]) - dt/dy * (FR[1][i + 1][j] - FR[1][i][j]);
-				RU[i][j] = RU[i][j] - dt/dx * (FRU[0][i + 1][j] - FRU[0][i][j]) - dt/dy * (FRU[1][i + 1][j] - FRU[1][i][j]);
-				RV[i][j] = RV[i][j] - dt/dx * (FRU[0][i + 1][j] - FRU[0][i][j]) - dt/dy * (FRU[1][i + 1][j] - FRU[1][i][j]);
-				RE[i][j] = RE[i][j] - dt/dx * (FRE[0][i + 1][j] - FRE[0][i][j]) - dt/dy * (FRE[1][i + 1][j] - FRE[1][i][j]);
-			}
-
-#pragma omp parallel for collapse(2)
-			for(int i = 0; i < num_cells[0]; i++)
-				for(int j = 0; j < num_cells[1]; j++)
-				{
-					U[i][j] = RU[i][j] / R[i][j];
-					V[i][j] = RV[i][j] / R[i][j];
-					P[i][j] = (GAMMA - 1.0) * (RE[i][j] - 0.5 * RU[i][j] * U[i][j] - 0.5 * RV[i][j] * V[i][j]);
-					S[i][j] = log(P[i][j] / pow(R[i][j], GAMMA));
-				}
-
-			if((step % n_save) == 0)
-			{
-				std::stringstream namefile;
-				namefile << step << ".dat";
-				output->save2dPlot(namefile.str().c_str(), mesh, R, U, V, P, S);
-			}
+		if((step % n_save) == 0)
+		{
+			std::stringstream namefile;
+			namefile << step << ".dat";
+			output->save2dPlot(namefile.str().c_str(), mesh, R, U, V, P, S);
+		}
 	}
 
 	delete bound;
