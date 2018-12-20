@@ -251,55 +251,46 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 		double dt = getTimeIncrement(R, U, V, P, mesh);
 		time += dt;
 
-		printf("step %d, time %d\n", step, time);
+		printf("step %d, time %lf\n", step, time);
 		bound->boundary_flows(R, U, V, P, dss, uss, vss, pss, num_cells);
 		linearSolver(num_cells, R, U, V, P, dss, uss, vss, pss);
 
-			double *traceData = new double[10];
+			//double *traceData = new double[7];
 #pragma omp parallel for collapse(2)
 		for(int i = 0; i <= num_cells[0]; i++)
 			for(int j = 0; j <= num_cells[1]; j++)
 		{
-			FR[0][i][j] = dss[0][i][j] * uss[0][i][j];
-			FRU[0][i][j] = dss[0][i][j] * uss[0][i][j] * uss[0][i][j] + pss[0][i][j];
-			FRV[0][i][j] = dss[0][i][j] * uss[0][i][j] * vss[0][i][j];
-			FRE[0][i][j] = (pss[0][i][j] / (GAMMA - 1.0) + 0.5*dss[0][i][j] * (uss[0][i][j] * uss[0][i][j] + vss[0][i][j] * vss[0][i][j]))*uss[0][i][j] + 
-				pss[0][i][j] * uss[0][i][j];
+			if(j < num_cells[1])
+			{
+				FR[0][i][j] = dss[0][i][j] * uss[0][i][j];
+				FRU[0][i][j] = dss[0][i][j] * uss[0][i][j] * uss[0][i][j] + pss[0][i][j];
+				FRV[0][i][j] = dss[0][i][j] * uss[0][i][j] * vss[0][i][j];
+				FRE[0][i][j] = (pss[0][i][j] / (GAMMA - 1.0) + 0.5*dss[0][i][j] * (uss[0][i][j] * uss[0][i][j] + vss[0][i][j] * vss[0][i][j]))*uss[0][i][j] + 
+					pss[0][i][j] * uss[0][i][j];
+			}
 
-			FR[1][i][j] = dss[1][i][j] * vss[1][i][j];
-			FRV[1][i][j] = dss[1][i][j] * vss[1][i][j] * vss[1][i][j] + pss[1][i][j];
-			FRU[1][i][j] = dss[1][i][j] * uss[1][i][j] * vss[1][i][j];
-			FRE[1][i][j] = (pss[1][i][j] / (GAMMA - 1.0) + 0.5*dss[1][i][j] * (uss[1][i][j] * uss[1][i][j] + vss[1][i][j] * vss[1][i][j]))*vss[1][i][j] + 
-				pss[1][i][j] * vss[1][i][j];
+			if(i < num_cells[0])
+			{
+				FR[1][i][j] = dss[1][i][j] * vss[1][i][j];
+				FRV[1][i][j] = dss[1][i][j] * vss[1][i][j] * vss[1][i][j] + pss[1][i][j];
+				FRU[1][i][j] = dss[1][i][j] * uss[1][i][j] * vss[1][i][j];
+				FRE[1][i][j] = (pss[1][i][j] / (GAMMA - 1.0) + 0.5*dss[1][i][j] * (uss[1][i][j] * uss[1][i][j] + vss[1][i][j] * vss[1][i][j]))*vss[1][i][j] + 
+					pss[1][i][j] * vss[1][i][j];
+			}
 
-
-			traceData[0] = i;
-			traceData[1] = j;
-			traceData[2] = dss[0][i][j];
-			traceData[3] = uss[0][i][j];
-			traceData[4] = vss[0][i][j];
-			traceData[5] = pss[0][i][j];
-			traceData[6] = dss[1][i][j];
-			traceData[7] = uss[1][i][j];
-			traceData[8] = vss[1][i][j];
-			traceData[9] = pss[1][i][j];
-			NTracer::traceToFile(traceData, "double", 10);
 		}
-
-			delete []traceData;
-			exit(1);
-
-
 
 #pragma omp parallel for collapse(2)
 		for(int i = 0; i < num_cells[0]; i++)
 			for(int j = 0; j < num_cells[1]; j++)
 		{
-			R[i][j] = R[i][j] - dt/dx * (FR[0][i + 1][j] - FR[0][i][j]) - dt/dy * (FR[1][i + 1][j] - FR[1][i][j]);
-			RU[i][j] = RU[i][j] - dt/dx * (FRU[0][i + 1][j] - FRU[0][i][j]) - dt/dy * (FRU[1][i + 1][j] - FRU[1][i][j]);
-			RV[i][j] = RV[i][j] - dt/dx * (FRU[0][i + 1][j] - FRU[0][i][j]) - dt/dy * (FRU[1][i + 1][j] - FRU[1][i][j]);
-			RE[i][j] = RE[i][j] - dt/dx * (FRE[0][i + 1][j] - FRE[0][i][j]) - dt/dy * (FRE[1][i + 1][j] - FRE[1][i][j]);
+			R[i][j] = R[i][j] - dt/dx * (FR[0][i + 1][j] - FR[0][i][j]) - dt/dy * (FR[1][i][j + 1] - FR[1][i][j]);
+			RU[i][j] = RU[i][j] - dt/dx * (FRU[0][i + 1][j] - FRU[0][i][j]) - dt/dy * (FRU[1][i][j + 1] - FRU[1][i][j]);
+			RV[i][j] = RV[i][j] - dt/dx * (FRV[0][i + 1][j] - FRV[0][i][j]) - dt/dy * (FRV[1][i][j + 1] - FRV[1][i][j]);
+			RE[i][j] = RE[i][j] - dt/dx * (FRE[0][i + 1][j] - FRE[0][i][j]) - dt/dy * (FRE[1][i][j + 1] - FRE[1][i][j]);
+
 		}
+
 
 #pragma omp parallel for collapse(2)
 		for(int i = 0; i < num_cells[0]; i++)
@@ -309,13 +300,28 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 				V[i][j] = RV[i][j] / R[i][j];
 				P[i][j] = (GAMMA - 1.0) * (RE[i][j] - 0.5 * RU[i][j] * U[i][j] - 0.5 * RV[i][j] * V[i][j]);
 				S[i][j] = log(P[i][j] / pow(R[i][j], GAMMA));
+
+			//traceData[0] = i;
+			//traceData[1] = j;
+			//traceData[2] = R[i][j];
+			//traceData[3] = U[i][j];
+			//traceData[4] = V[i][j];
+			//traceData[5] = P[i][j];
+			//traceData[6] = S[i][j];
+			//traceData[7] = FRU[1][i][j];
+			//traceData[8] = FRV[1][i][j];
+			//traceData[9] = FRE[1][i][j];
+			//NTracer::traceToFile(traceData, "double", 7);
 			}
+
+			//delete []traceData;
+			//exit(1);
 
 		if((step % n_save) == 0)
 		{
 			std::stringstream namefile;
 			namefile << step << ".dat";
-			output->save2dPlot(namefile.str().c_str(), mesh, R, U, V, P, S);
+			output->save1dPlotXAxis(namefile.str().c_str(), mesh, 50, R, U, V, P, S);
 		}
 	}
 

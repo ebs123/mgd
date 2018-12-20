@@ -7,9 +7,9 @@
 int main(int argc, char* argv)
 {
 	CSolvers *solver = new CSolvers;
-	int n_steps = 10;
+	int n_steps = 100;
 	int num_cells[2];
-	int n_save = 1;
+	int n_save = 10;
 	double ***V_init;
 	int problem_dimension = 2;
 	double *domain_length = new double[problem_dimension];
