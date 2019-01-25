@@ -115,7 +115,8 @@ void CSolvers::linearSolver(int* numcells, double** R, double** U, double** V, d
 					{
 						dss[1][i][j] = R[i][j - 1] * (1 + (pss[1][i][j] - P[i][j - 1])/(RC[i][j - 1] * 
 							C[i][j - 1]));
-						uss[1][i][j] = U[i][j - 1];
+						//uss[1][i][j] = U[i][j - 1];
+						uss[1][i][j] = U[i - 1][j];
 					}
 					else
 					{

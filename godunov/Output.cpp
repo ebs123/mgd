@@ -8,14 +8,14 @@ COutput::~COutput(void)
 {
 }
 
-void COutput::save2dPlot(const char* namefile, CMeshGenerator* mesh, double** R, double** U, double** V, double** P, double** S)
+void COutput::save2dPlot(const char* namefile, CMeshGenerator* mesh, double time, double** R, double** U, double** V, double** P, double** S)
 {
 	FILE *file;
 
 	file = fopen(namefile, "w");
-	fprintf(file, "%s\n", "TITLE = \" \"");
+	fprintf(file, "%s %lf %s\n", "TITLE = \"", time, "\"");
 	fprintf(file, "%s\n", "variables= \"x\", \"y\", \"R\", \"U\", \"V\", \"P\", \"S\"");
-	fprintf(file, "%s %d %s %d %s\n", "ZONE T=\" \", I=", mesh->getNumCells()[0], ", J=", mesh->getNumCells()[1], ", F=POINT");
+	fprintf(file, "%s %d %s %d %s\n", "ZONE T= \"\", I=", mesh->getNumCells()[0], ", J=", mesh->getNumCells()[1], ", F=POINT");
 
 	double *x = mesh->getMeshComponent(0);
 	double *y = mesh->getMeshComponent(1);
@@ -29,12 +29,12 @@ void COutput::save2dPlot(const char* namefile, CMeshGenerator* mesh, double** R,
 	fclose(file);
 }
 
-void COutput::save1dPlotXAxis(const char* namefile, CMeshGenerator* mesh, int y_layer_num, double** R, double** U, double** V, double** P, double** S)
+void COutput::save1dPlotXAxis(const char* namefile, CMeshGenerator* mesh, double time, int y_layer_num, double** R, double** U, double** V, double** P, double** S)
 {
 	FILE *file;
 
 	file = fopen(namefile, "w");
-	fprintf(file, "%s\n", "TITLE = \" \"");
+	fprintf(file, "%s %lf %s\n", "TITLE = \"", time, "\"");
 	fprintf(file, "%s\n", "variables= \"x\", \"R\", \"U\", \"V\", \"P\", \"S\"");
 
 	double *x = mesh->getMeshComponent(0);
@@ -47,12 +47,12 @@ void COutput::save1dPlotXAxis(const char* namefile, CMeshGenerator* mesh, int y_
 	fclose(file);
 }
 
-void COutput::save1dPlotYAxis(const char* namefile, CMeshGenerator* mesh, int x_layer_num, double** R, double** U, double** V, double** P, double** S)
+void COutput::save1dPlotYAxis(const char* namefile, CMeshGenerator* mesh, double time, int x_layer_num, double** R, double** U, double** V, double** P, double** S)
 {
 	FILE *file;
 
 	file = fopen(namefile, "w");
-	fprintf(file, "%s\n", "TITLE = \" \"");
+	fprintf(file, "%s %lf %s\n", "TITLE = \"", time, "\"");
 	fprintf(file, "%s\n", "variables= \"y\", \"R\", \"U\", \"V\", \"P\", \"S\"");
 
 	double *y = mesh->getMeshComponent(1);
