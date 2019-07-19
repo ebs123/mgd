@@ -7,18 +7,18 @@
 int main(int argc, char* argv)
 {
 	CSolvers *solver = new CSolvers;
-	int n_steps = 1000;
+	int n_steps = 500000;
 	int num_cells[2];
-	int n_save = 1;
+	int n_save = 10000;
 	double ***V_init;
 	int problem_dimension = 2;
 	double *domain_length = new double[problem_dimension];
 	int *mesh_size = new int[problem_dimension];
 
-	domain_length[0] = 1.;
-	domain_length[1] = 1.;
+	domain_length[0] = 8 * pi;
+	domain_length[1] = 4 * pi;
 	mesh_size[0] = 400.;
-	mesh_size[1] = 400.;
+	mesh_size[1] = 200.;
 
 	COutput *output = new COutput;
 	CMeshGenerator *mesh = new CMeshGenerator(domain_length, mesh_size, problem_dimension);
@@ -43,34 +43,10 @@ int main(int argc, char* argv)
 	for(size_t i = 0; i < num_cells[0]; i++)
 		for(size_t j = 0; j < num_cells[1]; j++)
 		{
-			if(y[i] > .5/* & y[j] > .5*/)
-			{
-				V_init[0][i][j] = 1.2714;
-				V_init[1][i][j] = 0.2928;
-				V_init[2][i][j] = 0.;
-				V_init[3][i][j] = 1.4017;
-			}
-			else if(y[i] < .5/* & y[j] < .5*/)
-			{
-				V_init[0][i][j] = 1.;
-				V_init[1][i][j] = 0.;
-				V_init[2][i][j] = 0.;
-				V_init[3][i][j] = 1.;
-			}
-			//else if(x[i] < .5 & y[j] < .5)
-			//{
-			//	V_init[0][i][j] = 1.;
-			//	V_init[1][i][j] = 0.;
-			//	V_init[2][i][j] = 0.;
-			//	V_init[3][i][j] = 1.;
-			//}
-			//else if(x[i] > .5 & y[j] < .5)
-			//{
-			//	V_init[0][i][j] = 1.;
-			//	V_init[1][i][j] = 0.;
-			//	V_init[2][i][j] = 0.;
-			//	V_init[3][i][j] = 4.;
-			//}
+			V_init[0][i][j] = 1;
+			V_init[1][i][j] = sin(y[j]) + .1 * sin(y[j]) + .001 * sin(.5 * x[i]);
+			V_init[2][i][j] = .1 * sin(y[j]) + 0.001 * sin(.5 * x[i]);
+			V_init[3][i][j] = 1000;
 		}
 
 	output->save2dPlot("initial.dat", mesh, 0, V_init[0], V_init[1], V_init[2], V_init[3], V_init[3]);

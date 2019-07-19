@@ -64,3 +64,39 @@ void COutput::save1dPlotYAxis(const char* namefile, CMeshGenerator* mesh, double
 
 	fclose(file);
 }
+
+void COutput::saveKineticEnergyAndEnstrophy(const char* namefile, CMeshGenerator* mesh, double** R, double** U, double** V, double time)
+{
+	FILE *file;
+	double energy, enstrophy;
+
+	energy = 0;
+	enstrophy = 0;
+	for(int i = 0; i < mesh->getNumCells()[0]; i++)
+	{
+		for(int j = 0; j < mesh->getNumCells()[1]; j++)
+		{
+			energy += .5 * R[i][j] * (U[i][j] * U[i][j] + V[i][j] * V[i][j]) * mesh->getMeshStep(0) * 
+				mesh->getMeshStep(1);
+			if(i > 0 && i < mesh->getNumCells()[0] - 1 && j > 0 && j < mesh->getNumCells()[1] - 1)
+			{
+				enstrophy += mesh->getMeshStep(0) * mesh->getMeshStep(1) * pow((V[i + 1][j] - V[i - 1][j]) * .5 / mesh->getMeshStep(0) - 
+					(U[i][j + 1] - U[i][j - 1]) * .5 / mesh->getMeshStep(1), 2);
+			}
+		}
+	}
+
+	file = fopen(namefile, "a+");
+	fprintf(file, "%lf %lf %lf\n", energy, enstrophy, time);
+	fclose(file);
+}
+
+void COutput::saveKineticEnergySpectrum(const char* namefile, double E_spectrum, double k_x, double k_y)
+{
+	FILE *file;
+	file = fopen(namefile, "a+");
+
+	fprintf(file, "%lf %lf\n", E_spectrum, sqrt(k_x * k_x + k_y * k_y));
+
+	fclose(file);
+}

@@ -1,4 +1,5 @@
 #include "includes\Solvers.h"
+#include "includes\flow_parameters.h"
 
 CSolvers::CSolvers()
 {
@@ -144,6 +145,8 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 	int num_cells[2];
 	double ***dss, ***uss, ***vss, ***pss;
 	double dx, dy;
+	double *y;
+	const double G = 0.01, k = 1;
 
 	CBoundaryConds *bound = new CBoundaryConds;
 	COutput *output = new COutput;
@@ -153,6 +156,7 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 
 	dx = mesh->getMeshStep(0);
 	dy = mesh->getMeshStep(1);
+	y = mesh->getMeshComponent(1);
 
 	dss = new double**[2];
 	uss = new double**[2];
@@ -271,17 +275,6 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 				FRE[1][i][j] = (pss[1][i][j] / (GAMMA - 1.0) + 0.5*dss[1][i][j] * (uss[1][i][j] * uss[1][i][j] + vss[1][i][j] * vss[1][i][j]))*vss[1][i][j] + 
 					pss[1][i][j] * vss[1][i][j];
 			}
-			//traceData[0] = i;
-			//traceData[1] = j;
-			//traceData[2] = dss[0][i][j];
-			//traceData[3] = dss[1][i][j];
-			//traceData[4] = uss[0][i][j];
-			//traceData[5] = uss[1][i][j];
-			//traceData[6] = vss[0][i][j];
-			//traceData[7] = vss[1][i][j];
-			//traceData[8] = pss[0][i][j];
-			//traceData[9] = pss[1][i][j];
-			//NTracer::traceToFile(traceData, "double", 10);
 		}
 		//delete []traceData;
 		//exit(1);
@@ -291,10 +284,9 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 			for(int j = 0; j < num_cells[1]; j++)
 		{
 			R[i][j] = R[i][j] - dt/dx * (FR[0][i + 1][j] - FR[0][i][j]) - dt/dy * (FR[1][i][j + 1] - FR[1][i][j]);
-			RU[i][j] = RU[i][j] - dt/dx * (FRU[0][i + 1][j] - FRU[0][i][j]) - dt/dy * (FRU[1][i][j + 1] - FRU[1][i][j]);
+			RU[i][j] = RU[i][j] - dt/dx * (FRU[0][i + 1][j] - FRU[0][i][j]) - dt/dy * (FRU[1][i][j + 1] - FRU[1][i][j]) + dt * G * R[i][j] * sin(k * y[j]);
 			RV[i][j] = RV[i][j] - dt/dx * (FRV[0][i + 1][j] - FRV[0][i][j]) - dt/dy * (FRV[1][i][j + 1] - FRV[1][i][j]);
 			RE[i][j] = RE[i][j] - dt/dx * (FRE[0][i + 1][j] - FRE[0][i][j]) - dt/dy * (FRE[1][i][j + 1] - FRE[1][i][j]);
-
 		}
 
 
@@ -306,18 +298,65 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 				V[i][j] = RV[i][j] / R[i][j];
 				P[i][j] = (GAMMA - 1.0) * (RE[i][j] - 0.5 * RU[i][j] * U[i][j] - 0.5 * RV[i][j] * V[i][j]);
 				S[i][j] = log(P[i][j] / pow(R[i][j], GAMMA));
+
+				if(P[i][j] < 0)
+				{
+					std::cout << "negative pressure at " << "i " << i << ", j " << j;
+					exit(1);
+				}
+
+				if(R[i][j] < 0)
+				{
+					std::cout << "negative density at " << "i " << i << ", j " << j;
+					exit(1);
+				}
+
+			//traceData[0] = i;
+			//traceData[1] = j;
+			//traceData[2] = dss[0][i][j];
+			//traceData[3] = dss[1][i][j];
+			//traceData[4] = uss[0][i][j];
+			//traceData[5] = uss[1][i][j];
+			//traceData[6] = vss[0][i][j];
+			//traceData[7] = vss[1][i][j];
+			//traceData[8] = pss[0][i][j];
+			//traceData[9] = pss[1][i][j];
+			//NTracer::traceToFile(traceData, "double", 10);
+
 			}
 
 		if((step % n_save) == 0)
 		{
-			std::stringstream namefile_x, namefile_y, namefile_2d;
-			namefile_x << "x_" << step << ".dat";
-			namefile_y << "y_" << step << ".dat";
+			std::stringstream namefile_2d;
+			/*namefile_x << "x_" << step << ".dat";
+			namefile_y << "y_" << step << ".dat";*/
 			namefile_2d << "2d_" << step << ".dat";
 			/*output->save1dPlotXAxis(namefile_x.str().c_str(), mesh, time, 200, R, U, V, P, P);
 			output->save1dPlotYAxis(namefile_y.str().c_str(), mesh, time, 200, R, U, V, P, P);*/
 			output->save2dPlot(namefile_2d.str().c_str(), mesh, time, R, U, V, P, P);
+		}
 
+		int n_save_flow_parameters = 10000;
+		if((step % 10) == 0)
+		{
+			output->saveKineticEnergyAndEnstrophy("kolm.dat", mesh, R, U, V, time);
+		}
+
+		if((step % n_save_flow_parameters) == 0)
+		{
+			std::stringstream namefile_spectrum;
+			CFlowParameters *flow_parameters = new CFlowParameters;
+			double E_spectrum;
+
+			namefile_spectrum << "kolm_spectrum_" << time << ".dat";
+			for(int k_x = 0; k_x < 110; k_x++)
+			{
+				int k_y = 1;
+				E_spectrum = flow_parameters->getKineticEnergySpectrum((double)k_x, (double)k_y, U, V, mesh);
+				output->saveKineticEnergySpectrum(namefile_spectrum.str().c_str(), E_spectrum, (double)k_x, (double)k_y);
+			}
+
+			delete flow_parameters;
 		}
 	}
 

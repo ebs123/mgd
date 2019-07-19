@@ -17,6 +17,7 @@ public:
 							 double*** vss, double*** pss);
 	double getTimeIncrement(double** R, double** U, double** V, double** P, CMeshGenerator* mesh);
 	void solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* mesh);
+	void getGradientsOfFlowData(double*** flow_data_dummy, double*** flow_data);
 
 	~CSolvers(void);
 };
