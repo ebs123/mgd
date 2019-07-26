@@ -10,6 +10,9 @@ private:
 	boundaryType x_bound_type, y_bound_type;
 	double ***flow_data_dummy;
 
+	//perversion
+	int m_mesh_size_x;
+
 public:
 	CBoundaryConds(void);
 	~CBoundaryConds(void);

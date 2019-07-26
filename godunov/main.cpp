@@ -17,8 +17,8 @@ int main(int argc, char* argv)
 
 	domain_length[0] = 8 * pi;
 	domain_length[1] = 4 * pi;
-	mesh_size[0] = 400.;
-	mesh_size[1] = 200.;
+	mesh_size[0] = 800.;
+	mesh_size[1] = 400.;
 
 	COutput *output = new COutput;
 	CMeshGenerator *mesh = new CMeshGenerator(domain_length, mesh_size, problem_dimension);

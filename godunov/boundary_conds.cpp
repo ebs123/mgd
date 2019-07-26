@@ -2,13 +2,13 @@
 
 CBoundaryConds::CBoundaryConds(void)
 {
-	flow_data_dummy = null;
+	flow_data_dummy = 0;
 }
 
 CBoundaryConds::~CBoundaryConds(void)
 {
 	for(int i = 0; i < 4; i++)
-		for(int j = 0; j < mesh_size_x + 4; j++)
+		for(int j = 0; j < m_mesh_size_x + 4; j++)
 		{
 			delete[] flow_data_dummy[i][j];
 		}
@@ -173,10 +173,12 @@ void CBoundaryConds::linear(double dl, double ul, double vl, double pl, double d
 
 double*** CBoundaryConds::getFlowDataWithDummy(double **R, double **U, double **V, double **P, int mesh_size_x, int mesh_size_y)
 {
-	if(flow_data_dummy != null)
+	if(flow_data_dummy != 0)
 	{
 		return flow_data_dummy;
 	}
+
+	m_mesh_size_x = mesh_size_x;
 
 	flow_data_dummy = new double**[4];
 	for(int i = 0; i < 4; i++)
@@ -246,7 +248,7 @@ double*** CBoundaryConds::getFlowDataWithDummy(double **R, double **U, double **
 		}
 	}
 
-	for(int i = 0; i < mesh_size_x; j++)
+	for(int i = 0; i < mesh_size_x; i++)
 	{
 		if(y_bound_type == OUTFLOW)
 		{
