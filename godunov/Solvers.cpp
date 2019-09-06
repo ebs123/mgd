@@ -9,6 +9,133 @@ CSolvers::~CSolvers(void)
 {
 }
 
+void CSolvers::getCellsFlowsSecondOrder(int* numcells, CMeshGenerator* mesh, double** R, double** U, double** V, double** P, double*** dss, double*** uss, 
+							 double*** vss, double*** pss)
+{
+	double **C = new double*[numcells[0] + 4];
+	double **RC = new double*[numcells[0] + 4];
+	double **H = new double*[numcells[0] + 4];
+
+	for(size_t i = 0; i < numcells[0] + 4; i++)
+	{
+		C[i] = new double[numcells[1] + 4];
+		RC[i] = new double[numcells[1] + 4];
+		H[i] = new double[numcells[1] + 4];
+	}
+
+	CBoundaryConds *boundary = new CBoundaryConds;
+	double ***flow_data_with_dummy;//R,U,V,P
+	double ***R_with_dummy_reconstr, ***U_with_dummy_reconstr, ***V_with_dummy_reconstr, ***P_with_dummy_reconstr;
+	flow_data_with_dummy = boundary->getFlowDataWithDummy(R, U, V, P, numcells[0], numcells[1]);
+	flowDataReconstruction(numcells, flow_data_with_dummy[0], flow_data_with_dummy[1], flow_data_with_dummy[2], 
+							flow_data_with_dummy[3], R_with_dummy_reconstr, U_with_dummy_reconstr, 
+							V_with_dummy_reconstr, P_with_dummy_reconstr, mesh);
+
+#pragma omp parallel for collapse(2)
+	for(int i = 2; i < numcells[0] - 2; i++)
+		for(int j = 2; j < numcells[1] - 2; j++)
+		{
+			C[i - 1][j] = sqrt(GAMMA*P_with_dummy_reconstr[0][i - 1][j] / R_with_dummy_reconstr[0][i - 1][j]);
+			RC[i - 1][j] = R_with_dummy_reconstr[0][i - 1][j] * C[i - 1][j];
+			H[i - 1][j] = 1.0 / (RC[i - 1][j]);
+
+			C[i][j] = sqrt(GAMMA*flow_data_with_dummy[3][i][j] / flow_data_with_dummy[0][i][j]);
+
+			C[i][j - 1] = sqrt(GAMMA*P_with_dummy_reconstr[1][i][j - 1] / R_with_dummy_reconstr[1][i][j - 1]);
+			RC[i][j - 1] = R_with_dummy_reconstr[1][i][j - 1] * C[i][j - 1];
+			H[i][j - 1] = 1.0 / (RC[i][j - 1]);
+
+			RC[i][j] = flow_data_with_dummy[0][i][j] * C[i][j];
+
+			H[i][j] = 1.0 / (RC[i][j]);
+
+			//one direction
+			if(U_with_dummy_reconstr[0][i - 1][j] > C[i - 1][j])
+			{
+				pss[0][i][j] = P_with_dummy_reconstr[0][i - 1][j];
+				uss[0][i][j] = U_with_dummy_reconstr[0][i - 1][j];
+				dss[0][i][j] = R_with_dummy_reconstr[0][i - 1][j];
+				vss[0][i][j] = V_with_dummy_reconstr[0][i - 1][j];
+			}
+			else if (flow_data_with_dummy[1][i][j] < -C[i][j])
+			{
+				pss[0][i][j] = flow_data_with_dummy[3][i][j];
+				uss[0][i][j] = flow_data_with_dummy[1][i][j];
+				dss[0][i][j] = flow_data_with_dummy[0][i][j];
+				vss[0][i][j] = flow_data_with_dummy[2][i][j];
+			}
+			else
+			{
+				pss[0][i][j] = (U_with_dummy_reconstr[0][i - 1][j] - flow_data_with_dummy[1][i][j] + P_with_dummy_reconstr[0][i - 1][j] * H[i - 1][j] + flow_data_with_dummy[3][i][j] * H[i][j]) / 
+					(H[i - 1][j] + H[i][j]);
+				uss[0][i][j] = (RC[i - 1][j] * U_with_dummy_reconstr[0][i - 1][j] + RC[i][j] * flow_data_with_dummy[1][i][j] + P_with_dummy_reconstr[0][i - 1][j] - flow_data_with_dummy[3][i][j]) / 
+					(RC[i - 1][j] + RC[i][j]);
+
+				if (uss[0][i][j] > 0)
+				{
+					dss[0][i][j] = R_with_dummy_reconstr[0][i - 1][j] * (1 + (pss[0][i][j] - P_with_dummy_reconstr[0][i - 1][j])/(RC[i - 1][j] * 
+						C[i - 1][j]));
+					vss[0][i][j] = V_with_dummy_reconstr[0][i - 1][j];
+				}
+				else
+				{
+					dss[0][i][j] = flow_data_with_dummy[0][i][j] * (1 + (pss[0][i][j] - flow_data_with_dummy[3][i][j])/(RC[i][j] * C[i][j]));
+					vss[0][i][j] = flow_data_with_dummy[2][i][j];
+				}
+			}
+
+			//two direction
+			if(V_with_dummy_reconstr[1][i][j - 1] > C[i][j - 1])
+			{
+				pss[1][i][j] = P_with_dummy_reconstr[1][i][j - 1];
+				uss[1][i][j] = U_with_dummy_reconstr[1][i][j - 1];
+				dss[1][i][j] = R_with_dummy_reconstr[1][i][j - 1];
+				vss[1][i][j] = V_with_dummy_reconstr[1][i][j - 1];
+			}
+			else if (flow_data_with_dummy[2][i][j] < -C[i][j])
+			{
+				pss[1][i][j] = flow_data_with_dummy[3][i][j];
+				uss[1][i][j] = flow_data_with_dummy[1][i][j];
+				dss[1][i][j] = flow_data_with_dummy[0][i][j];
+				vss[1][i][j] = flow_data_with_dummy[2][i][j];
+			}
+			else
+			{
+				pss[1][i][j] = (V_with_dummy_reconstr[1][i][j - 1] - flow_data_with_dummy[2][i][j] + P_with_dummy_reconstr[1][i][j - 1] * H[i][j - 1] + flow_data_with_dummy[3][i][j] * H[i][j]) / 
+					(H[i][j - 1] + H[i][j]);
+				vss[1][i][j] = (RC[i][j - 1] * V_with_dummy_reconstr[1][i][j - 1] + RC[i][j] * flow_data_with_dummy[2][i][j] + P_with_dummy_reconstr[1][i][j - 1] - flow_data_with_dummy[3][i][j]) / 
+					(RC[i][j - 1] + RC[i][j]);
+
+				if (vss[1][i][j] > 0)
+				{
+					dss[1][i][j] = R_with_dummy_reconstr[1][i][j - 1] * (1 + (pss[1][i][j] - P_with_dummy_reconstr[1][i][j - 1])/(RC[i][j - 1] * 
+						C[i][j - 1]));
+					uss[1][i][j] = U_with_dummy_reconstr[1][i][j - 1];
+				}
+				else
+				{
+					dss[1][i][j] = flow_data_with_dummy[0][i][j] * (1 + (pss[1][i][j] - flow_data_with_dummy[3][i][j])/(RC[i][j] * C[i][j]));
+					uss[1][i][j] = flow_data_with_dummy[1][i][j];
+				}
+			}
+			
+		}
+
+	for(size_t i = 0; i < numcells[0]; i++)
+	{
+		delete[] RC[i];
+		delete[] C[i];
+		delete[] H[i];
+	}
+
+	delete[] RC;
+	delete[] C;
+	delete[] H;
+
+	delete boundary;
+
+}
+
 void CSolvers::linearSolver(int* numcells, double** R, double** U, double** V, double** P, double*** dss, double*** uss, 
 							 double*** vss, double*** pss)
 {
@@ -146,7 +273,7 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 	double ***dss, ***uss, ***vss, ***pss;
 	double dx, dy;
 	double *y;
-	const double G = 0.01, k = 1;
+	const double G = 1, k = 1;
 
 	CBoundaryConds *bound = new CBoundaryConds;
 	COutput *output = new COutput;
@@ -576,14 +703,14 @@ void CSolvers::flowVariablesLimiters(double** R_with_dummy, double** U_with_dumm
 	{
 		for(int j = 0; j < y_cells_num; j++)
 		{
-			R_limiter[0][i][j] = max(0, min(1, (R_with_dummy[i][j] - R_with_dummy[i - 1][j])/(R_with_dummy[i + 1][j] - R_with_dummy[i][j])));
-			R_limiter[1][i][j] = max(0, min(1, (R_with_dummy[i][j] - R_with_dummy[i][j - 1])/(R_with_dummy[i][j + 1] - R_with_dummy[i][j])));
-			U_limiter[0][i][j] = max(0, min(1, (U_with_dummy[i][j] - U_with_dummy[i - 1][j])/(U_with_dummy[i + 1][j] - U_with_dummy[i][j])));
-			U_limiter[1][i][j] = max(0, min(1, (U_with_dummy[i][j] - U_with_dummy[i][j - 1])/(U_with_dummy[i][j + 1] - U_with_dummy[i][j])));
-			V_limiter[0][i][j] = max(0, min(1, (V_with_dummy[i][j] - V_with_dummy[i - 1][j])/(V_with_dummy[i + 1][j] - V_with_dummy[i][j])));
-			V_limiter[1][i][j] = max(0, min(1, (V_with_dummy[i][j] - V_with_dummy[i][j - 1])/(V_with_dummy[i][j + 1] - V_with_dummy[i][j])));
-			P_limiter[0][i][j] = max(0, min(1, (P_with_dummy[i][j] - P_with_dummy[i - 1][j])/(P_with_dummy[i + 1][j] - P_with_dummy[i][j])));
-			P_limiter[1][i][j] = max(0, min(1, (P_with_dummy[i][j] - P_with_dummy[i][j - 1])/(P_with_dummy[i][j + 1] - P_with_dummy[i][j])));
+			R_limiter[0][i][j] = std::max((double)0, std::min((double)1, (R_with_dummy[i][j] - R_with_dummy[i - 1][j])/(R_with_dummy[i + 1][j] - R_with_dummy[i][j])));
+			R_limiter[1][i][j] = std::max((double)0, std::min((double)1, (R_with_dummy[i][j] - R_with_dummy[i][j - 1])/(R_with_dummy[i][j + 1] - R_with_dummy[i][j])));
+			U_limiter[0][i][j] = std::max((double)0, std::min((double)1, (U_with_dummy[i][j] - U_with_dummy[i - 1][j])/(U_with_dummy[i + 1][j] - U_with_dummy[i][j])));
+			U_limiter[1][i][j] = std::max((double)0, std::min((double)1, (U_with_dummy[i][j] - U_with_dummy[i][j - 1])/(U_with_dummy[i][j + 1] - U_with_dummy[i][j])));
+			V_limiter[0][i][j] = std::max((double)0, std::min((double)1, (V_with_dummy[i][j] - V_with_dummy[i - 1][j])/(V_with_dummy[i + 1][j] - V_with_dummy[i][j])));
+			V_limiter[1][i][j] = std::max((double)0, std::min((double)1, (V_with_dummy[i][j] - V_with_dummy[i][j - 1])/(V_with_dummy[i][j + 1] - V_with_dummy[i][j])));
+			P_limiter[0][i][j] = std::max((double)0, std::min((double)1, (P_with_dummy[i][j] - P_with_dummy[i - 1][j])/(P_with_dummy[i + 1][j] - P_with_dummy[i][j])));
+			P_limiter[1][i][j] = std::max((double)0, std::min((double)1, (P_with_dummy[i][j] - P_with_dummy[i][j - 1])/(P_with_dummy[i][j + 1] - P_with_dummy[i][j])));
 		}
 	}
 }
