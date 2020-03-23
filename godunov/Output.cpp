@@ -29,37 +29,39 @@ void COutput::save2dPlot(const char* namefile, CMeshGenerator* mesh, double time
 	fclose(file);
 }
 
-void COutput::save1dPlotXAxis(const char* namefile, CMeshGenerator* mesh, double time, int y_layer_num, double** R, double** U, double** V, double** P, double** S)
+void COutput::save1dPlotXAxis(const char* namefile, CMeshGenerator* mesh, double time, int y_layer_num, double** R, double** U, double** V, double** P)
 {
 	FILE *file;
 
 	file = fopen(namefile, "w");
 	fprintf(file, "%s %lf %s\n", "TITLE = \"", time, "\"");
-	fprintf(file, "%s\n", "variables= \"x\", \"R\", \"U\", \"V\", \"P\", \"S\"");
+	fprintf(file, "%s\n", "variables= \"x\", \"R\", \"U\", \"P\", \"E\", \"S\"");
 
 	double *x = mesh->getMeshComponent(0);
-
+//s=log(P[i][y_layer_num] / pow(R[i][y_layer_num], GAMMA))
 	for(int i = 0; i < mesh->getNumCells()[0]; i++)
 	{
-		fprintf(file, "%lf %lf %lf %lf %lf %lf\n", x[i], R[i][y_layer_num], U[i][y_layer_num], V[i][y_layer_num], P[i][y_layer_num], S[i][y_layer_num]);
+		fprintf(file, "%lf %lf %lf %lf %lf %lf\n", x[i], R[i][y_layer_num], U[i][y_layer_num], P[i][y_layer_num], .5 * R[i][y_layer_num] * (U[i][y_layer_num] * U[i][y_layer_num]) + P[i][y_layer_num]/(R[i][y_layer_num] * (GAMMA - 1)), 
+			log(P[i][y_layer_num] / pow(R[i][y_layer_num], GAMMA)));
 	}
 
 	fclose(file);
 }
 
-void COutput::save1dPlotYAxis(const char* namefile, CMeshGenerator* mesh, double time, int x_layer_num, double** R, double** U, double** V, double** P, double** S)
+void COutput::save1dPlotYAxis(const char* namefile, CMeshGenerator* mesh, double time, int x_layer_num, double** R, double** U, double** V, double** P)
 {
 	FILE *file;
 
 	file = fopen(namefile, "w");
 	fprintf(file, "%s %lf %s\n", "TITLE = \"", time, "\"");
-	fprintf(file, "%s\n", "variables= \"y\", \"R\", \"U\", \"V\", \"P\", \"S\"");
+	fprintf(file, "%s\n", "variables= \"x\", \"R\", \"U\", \"P\", \"E\", \"S\"");
 
 	double *y = mesh->getMeshComponent(1);
 
 	for(int j = 0; j < mesh->getNumCells()[1]; j++)
 	{
-		fprintf(file, "%lf %lf %lf %lf %lf %lf\n", y[j], R[x_layer_num][j], U[x_layer_num][j], V[x_layer_num][j], P[x_layer_num][j], S[x_layer_num][j]);
+		fprintf(file, "%lf %lf %lf %lf %lf %lf\n", y[j], R[x_layer_num][j], U[x_layer_num][j], P[x_layer_num][j], .5 * R[x_layer_num][j] * (U[x_layer_num][j] * U[x_layer_num][j]) + P[x_layer_num][j]/(R[x_layer_num][j] * (GAMMA - 1)), 
+			log(P[x_layer_num][j] / pow(R[x_layer_num][j], GAMMA)));
 	}
 
 	fclose(file);

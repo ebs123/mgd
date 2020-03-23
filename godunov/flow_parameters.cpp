@@ -2,47 +2,70 @@
 
 CFlowParameters::CFlowParameters(void)
 {
+	k_x_max = 200;
+	k_y_max = 200;
+	E = new double[(int)sqrt((double)(k_x_max * k_x_max + k_y_max * k_y_max))];
 }
 
 CFlowParameters::~CFlowParameters(void)
 {
+	delete E;
 }
 
-double CFlowParameters::getKineticEnergySpectrum(double k_x, double k_y, double** U, double** V, CMeshGenerator* mesh)
+double* CFlowParameters::getKineticEnergySpectrum(double** U, double** V)
 {
-	double e_1, e_2, e_3, e_4;
-	double *x, *y;
-	double dx, dy;
+	double U_fourier_i[4], V_fourier_i[4];
+	const int N = 398;
+	double h, E_kx_ky;
+	const int k_max = sqrt((double)(k_x_max * k_x_max + k_y_max * k_y_max));
 
-	x = mesh->getMeshComponent(0);
-	y = mesh->getMeshComponent(1);
-	dx = mesh->getMeshStep(0);
-	dy = mesh->getMeshStep(1);
-
-	e_1 = 0;
-	e_2 = 0;
-	e_3 = 0;
-	e_4 = 0;
-	for(int i = 0; i < mesh->getNumCells()[0]; i++)
+	for(int i = 0; i < (int)sqrt((double)(k_x_max * k_x_max + k_y_max * k_y_max)); i++)
 	{
-		if(x[i] > 2 * pi)
-		{
-			break;
-		}
+		E[i] = 0;
+	}
 
-		for(int j = 0; j < mesh->getNumCells()[1]; j++)
+	for(int i = 0; i < 4; i++)
+	{
+		U_fourier_i[i] = 0;
+		V_fourier_i[i] = 0;
+	}
+
+	h = 2 * pi/(N + 1);
+
+	for(int k_loop = 1; k_loop < k_max + 1; k_loop++)
+	{
+		for(int k_x = 1; k_x < k_x_max + 1; k_x++)
 		{
-			if(y[j] > 2 * pi)
+			for(int k_y = 1; k_y < k_y_max + 1; k_y++)
 			{
-				break;
-			}
+				double k_mod = sqrt((double)(k_x_max * k_x_max + k_y_max * k_y_max));
+				for(int i = 1; i < N + 2; i++)
+				{
+					for(int j = 1; j < N + 2; j++)
+					{
+						U_fourier_i[0] += 1/pi * U[i][j] * cos(k_x * h * i * .5) * cos(k_y * h * j * .5) * h * h;
+						U_fourier_i[1] += 1/pi * U[i][j] * cos(k_x * h * i * .5) * sin(k_y * h * j * .5) * h * h;
+						U_fourier_i[2] += 1/pi * U[i][j] * sin(k_x * h * i * .5) * cos(k_y * h * j * .5) * h * h;
+						U_fourier_i[3] += 1/pi * U[i][j] * sin(k_x * h * i * .5) * sin(k_y * h * j * .5) * h * h;
 
-			e_1 += 1/pi * (U[i][j] * U[i][j] + V[i][j] * V[i][j]) * .5 * cos(k_x * x[i]) * cos(k_y * y[j]) * dx * dy;
-			e_2 += 1/pi * (U[i][j] * U[i][j] + V[i][j] * V[i][j]) * .5 * cos(k_x * x[i]) * sin(k_y * y[j]) * dx * dy;
-			e_3 += 1/pi * (U[i][j] * U[i][j] + V[i][j] * V[i][j]) * .5 * sin(k_x * x[i]) * cos(k_y * y[j]) * dx * dy;
-			e_4 += 1/pi * (U[i][j] * U[i][j] + V[i][j] * V[i][j]) * .5 * sin(k_x * x[i]) * sin(k_y * y[j]) * dx * dy;
+						V_fourier_i[0] += 1/pi * U[i][j] * cos(k_x * h * i * .5) * cos(k_y * h * j * .5) * h * h;
+						V_fourier_i[1] += 1/pi * U[i][j] * cos(k_x * h * i * .5) * sin(k_y * h * j * .5) * h * h;
+						V_fourier_i[2] += 1/pi * U[i][j] * sin(k_x * h * i * .5) * cos(k_y * h * j * .5) * h * h;
+						V_fourier_i[3] += 1/pi * U[i][j] * sin(k_x * h * i * .5) * sin(k_y * h * j * .5) * h * h;
+					}
+				}
+
+				E_kx_ky = (U_fourier_i[0] * U_fourier_i[0] + U_fourier_i[1] * U_fourier_i[1] + U_fourier_i[2] * U_fourier_i[2] + 
+					U_fourier_i[3] * U_fourier_i[3] + V_fourier_i[0] * V_fourier_i[0] + V_fourier_i[1] * V_fourier_i[1] + 
+					V_fourier_i[2] * V_fourier_i[2] + V_fourier_i[3] * V_fourier_i[3]) * .5;
+
+				if(abs(k_loop - k_mod) < .5)
+				{
+					E[k_loop] += E_kx_ky;
+				}
+			}
 		}
 	}
 
-	return sqrt(e_1 * e_1 + e_2 * e_2 + e_3 * e_3 + e_4 * e_4);
+	return E;
 }

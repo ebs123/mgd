@@ -31,12 +31,12 @@ int main(int argc, char* argv)
 	int problem_dimension = 2;
 	double *domain_length = new double[problem_dimension];
 	int *mesh_size = new int[problem_dimension];
-	bool continue_calc = true;
+	bool continue_calc = false;
 
-	domain_length[0] = 8 * pi;
-	domain_length[1] = 4 * pi;
-	mesh_size[0] = 400.;
-	mesh_size[1] = 200.;
+	domain_length[0] = 2*pi;
+	domain_length[1] = 2*pi;
+	mesh_size[0] = 250.;
+	mesh_size[1] = 250.;
 
 	COutput *output = new COutput;
 	CMeshGenerator *mesh = new CMeshGenerator(domain_length, mesh_size, problem_dimension);
@@ -102,14 +102,34 @@ int main(int argc, char* argv)
 		for(size_t i = 0; i < num_cells[0]; i++)
 			for(size_t j = 0; j < num_cells[1]; j++)
 			{
-				V_init[0][i][j] = 1;
-				V_init[1][i][j] = sin(y[j]) + .1 * sin(y[j]) + .001 * sin(.5 * x[i]);
-				V_init[2][i][j] = .1 * sin(y[j]) + 0.001 * sin(.5 * x[i]);
+				V_init[0][i][j] = 10;
+				V_init[1][i][j] = 10 * sin(10 * y[j]);// + .01 * sin(x[i]);
+				V_init[2][i][j] = - 10 * sin(10 * x[i]);// + .01 * sin(y[j]);
 				V_init[3][i][j] = 10000;
+				/*if(x[i] < .5)
+				{
+					V_init[0][i][j] = 1.0;
+					V_init[1][i][j] = 0.;
+					V_init[2][i][j] = 0.;
+					V_init[3][i][j] = 1.0;
+				}
+				else
+				{
+					V_init[0][i][j] = 0.125;
+					V_init[1][i][j] = 0.;
+					V_init[2][i][j] = 0.;
+					V_init[3][i][j] = 0.1;
+				}*/
+					/*V_init[0][i][j] = 1.;
+					V_init[1][i][j] = 0.;
+					V_init[2][i][j] = 0.;
+					V_init[3][i][j] = 10.;*/
 			}
 	}
 
 	output->save2dPlot("initial.dat", mesh, 0, V_init[0], V_init[1], V_init[2], V_init[3], V_init[3]);
+	/*output->save1dPlotXAxis("initialX.dat", mesh, 0, 50, V_init[0], V_init[1], V_init[2], V_init[3]);
+	output->save1dPlotYAxis("initialY.dat", mesh, 0, 50, V_init[0], V_init[1], V_init[2], V_init[3]);*/
 	//exit(1);
 
 	solver->solve(V_init, n_steps, n_save, mesh);

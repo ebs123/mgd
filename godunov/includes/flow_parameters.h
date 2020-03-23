@@ -5,9 +5,15 @@
 
 class CFlowParameters
 {
+private:
+	double *E;
+public:
+	int k_x_max;
+	int k_y_max;
+
 public:
 	CFlowParameters(void);
-	double getKineticEnergySpectrum(double k_x, double k_y, double** U, double** V, CMeshGenerator* mesh);
+	double* getKineticEnergySpectrum(double** U, double** V);
 
 public:
 	~CFlowParameters(void);

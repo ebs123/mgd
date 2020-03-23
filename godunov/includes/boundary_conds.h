@@ -14,7 +14,7 @@ private:
 	int m_mesh_size_x;
 
 public:
-	CBoundaryConds(void);
+	CBoundaryConds(boundaryType _x_bound_type, boundaryType _y_bound_type);
 	~CBoundaryConds(void);
 
 	void boundary_flows(double **R, double **U, double **V, double **P, double*** dss, double*** uss, double*** vss, 
