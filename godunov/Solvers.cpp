@@ -10,7 +10,7 @@ CSolvers::~CSolvers(void)
 }
 
 void CSolvers::getCellsFlowsSecondOrder(int* numcells, CMeshGenerator* mesh, double** R, double** U, double** V, double** P, double*** dss, double*** uss, 
-							 double*** vss, double*** pss)
+							 double*** vss, double*** pss, boundaryType x_bound_type, boundaryType y_bound_type)
 {
 	double **C = new double*[numcells[0] + 4];
 	double **RC = new double*[numcells[0] + 4];
@@ -23,7 +23,7 @@ void CSolvers::getCellsFlowsSecondOrder(int* numcells, CMeshGenerator* mesh, dou
 		H[i] = new double[numcells[1] + 4];
 	}
 
-	CBoundaryConds *boundary = new CBoundaryConds(OUTFLOW, OUTFLOW);
+	CBoundaryConds *boundary = new CBoundaryConds(x_bound_type, y_bound_type);
 	double ***flow_data_with_dummy;//R,U,V,P
 	double ***R_with_dummy_reconstr, ***U_with_dummy_reconstr, ***V_with_dummy_reconstr, ***P_with_dummy_reconstr;
 
@@ -53,9 +53,16 @@ void CSolvers::getCellsFlowsSecondOrder(int* numcells, CMeshGenerator* mesh, dou
 							flow_data_with_dummy[3], R_with_dummy_reconstr, U_with_dummy_reconstr, 
 							V_with_dummy_reconstr, P_with_dummy_reconstr, mesh);
 
+	//for(int k = 0; k < 2; k++)
+	//	for(int i = 0; i < numcells[0] + 4; i++)
+	//	{
+	//		NTracer::traceToFile(U_with_dummy_reconstr[k][i], "double", numcells[1] + 4);
+	//	}
+	//exit(1);
+
 #pragma omp parallel for collapse(2)
-	for(int i = 2; i < numcells[0] + 2; i++)
-		for(int j = 2; j < numcells[1] + 2; j++)
+	for(int i = 2; i < numcells[0] + 3; i++)
+		for(int j = 2; j < numcells[1] + 3; j++)
 		{
 			C[i - 1][j] = sqrt(GAMMA*P_with_dummy_reconstr[0][i - 1][j] / R_with_dummy_reconstr[0][i - 1][j]);
 			RC[i - 1][j] = R_with_dummy_reconstr[0][i - 1][j] * C[i - 1][j];
@@ -309,16 +316,17 @@ void CSolvers::linearSolver(int* numcells, double** R, double** U, double** V, d
 
 }
 
-void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* mesh)
+void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* mesh, boundaryType x_bound_type, boundaryType y_bound_type)
 {
 	int num_cells[2];
 	double ***dss, ***uss, ***vss, ***pss;
 	double dx, dy;
 	double *y;
-	const double G = 10;
+	const double G = .01, k = 2;
 
-	CBoundaryConds *bound = new CBoundaryConds(OUTFLOW, OUTFLOW);
+	CBoundaryConds *bound = new CBoundaryConds(x_bound_type, y_bound_type);
 	COutput *output = new COutput;
+	CFlowParameters *flow_parameters = new CFlowParameters(mesh);
 
 	num_cells[0] = mesh->getNumCells()[0];
 	num_cells[1] = mesh->getNumCells()[1];
@@ -383,18 +391,16 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 		RE[i] = new double[num_cells[1]];
 	}
 
-	double **U, **V, **P, **S;
+	double **U, **V, **P;
 
 	U = new double*[num_cells[0]];
 	V = new double*[num_cells[0]];
 	P = new double*[num_cells[0]];
-	S = new double*[num_cells[0]];
 	for(size_t i = 0; i < num_cells[0]; i++)
 	{
 		U[i] = new double[num_cells[1]];
 		V[i] = new double[num_cells[1]];
 		P[i] = new double[num_cells[1]];
-		S[i] = new double[num_cells[1]];
 	}
 
 	R = V_init[0];
@@ -419,15 +425,18 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 		time += dt;
 
 		printf("step %d, time %lf\n", step, time);
-		bound->boundary_flows(R, U, V, P, dss, uss, vss, pss, num_cells);
-		linearSolver(num_cells, R, U, V, P, dss, uss, vss, pss);
-		//getCellsFlowsSecondOrder(num_cells, mesh, R, U, V, P, dss, uss, vss, pss);
+		//bound->boundary_flows(R, U, V, P, dss, uss, vss, pss, num_cells);
+		//linearSolver(num_cells, R, U, V, P, dss, uss, vss, pss);
+		getCellsFlowsSecondOrder(num_cells, mesh, R, U, V, P, dss, uss, vss, pss, x_bound_type, y_bound_type);
 
 		//double *traceData = new double[num_cells[1]];
-		/*for(int i = 0; i < num_cells[0] + 1; i++)
-		{
-			NTracer::traceToFile(dss[0][i], "double", num_cells[1]);
-		}*/
+		//for(int k = 0; k < 2; k++)
+		//	for(int i = 0; i < num_cells[0] + 1; i++)
+		//	{
+		//		NTracer::traceToFile(pss[k][i], "double", num_cells[1]);
+		//	}
+		//exit(1);
+
 #pragma omp parallel for collapse(2)
 		for(int i = 0; i <= num_cells[0]; i++)
 			for(int j = 0; j <= num_cells[1]; j++)
@@ -458,11 +467,10 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 			for(int j = 0; j < num_cells[1]; j++)
 		{
 			R[i][j] = R[i][j] - dt/dx * (FR[0][i + 1][j] - FR[0][i][j]) - dt/dy * (FR[1][i][j + 1] - FR[1][i][j]);
-			RU[i][j] = RU[i][j] - dt/dx * (FRU[0][i + 1][j] - FRU[0][i][j]) - dt/dy * (FRU[1][i][j + 1] - FRU[1][i][j]);// + dt * G * R[i][j] * sin(10 * y[j]);
-			RV[i][j] = RV[i][j] - dt/dx * (FRV[0][i + 1][j] - FRV[0][i][j]) - dt/dy * (FRV[1][i][j + 1] - FRV[1][i][j]);
+			RU[i][j] = RU[i][j] - dt/dx * (FRU[0][i + 1][j] - FRU[0][i][j]) - dt/dy * (FRU[1][i][j + 1] - FRU[1][i][j]) + dt * G * R[i][j] * sin(k * y[j]);
+			RV[i][j] = RV[i][j] - dt/dx * (FRV[0][i + 1][j] - FRV[0][i][j]) - dt/dy * (FRV[1][i][j + 1] - FRV[1][i][j]);// - dt * R[i][j] * .1;
 			RE[i][j] = RE[i][j] - dt/dx * (FRE[0][i + 1][j] - FRE[0][i][j]) - dt/dy * (FRE[1][i][j + 1] - FRE[1][i][j]);
 		}
-
 
 #pragma omp parallel for collapse(2)
 		for(int i = 0; i < num_cells[0]; i++)
@@ -471,7 +479,6 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 				U[i][j] = RU[i][j] / R[i][j];
 				V[i][j] = RV[i][j] / R[i][j];
 				P[i][j] = (GAMMA - 1.0) * (RE[i][j] - 0.5 * RU[i][j] * U[i][j] - 0.5 * RV[i][j] * V[i][j]);
-				S[i][j] = log(P[i][j] / pow(R[i][j], GAMMA));
 
 				if(P[i][j] < 0)
 				{
@@ -486,7 +493,7 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 				}
 			}
 
-		if((step % n_save) == 0)
+		if((step % n_save) == 0/*time > .1*/)
 		{
 			std::stringstream namefile_2d /*namefile_x, namefile_y*/;
 			//namefile_x << "x_" << step << ".dat";
@@ -494,38 +501,39 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 			namefile_2d << "2d_" << step << ".dat";
 			//output->save1dPlotXAxis(namefile_x.str().c_str(), mesh, time, 50, R, U, V, P);
 			//output->save1dPlotYAxis(namefile_y.str().c_str(), mesh, time, 50, R, U, V, P);
-			output->save2dPlot(namefile_2d.str().c_str(), mesh, time, R, U, V, P, P);
+			double **S = flow_parameters->getFlowEntropy(R, P);
+			double **S_diff = flow_parameters->getFlowEntropyDiff();
+			output->save2dPlot(namefile_2d.str().c_str(), mesh, time, R, U, V, P, S, S_diff);
+			//exit(1);
 		}
+		//flow_parameters->saveFlowEntropyCurrTimeStep(R, P);
 
-		/*if(time > .2)
-		{
-			exit(1);
-		}*/
-		if((step % 10) == 0)
-		{
-			output->saveKineticEnergyAndEnstrophy("kolm.dat", mesh, R, U, V, time);
-		}
+		//if((step % 10) == 0)
+		//{
+		//	output->saveKineticEnergyAndEnstrophy("kolm.dat", mesh, R, U, V, time);
+		//}
 
-		/*if((step % n_save_flow_parameters) == 0)
-		{
-			std::stringstream namefile_spectrum;
-			CFlowParameters *flow_parameters = new CFlowParameters;
-			double E_spectrum;
+		//const int n_save_flow_parameters = 10000;
 
-			namefile_spectrum << "kolm_spectrum_" << time << ".dat";
-			for(int k_x = 0; k_x < 110; k_x++)
-			{
-				int k_y = 1;
-				E_spectrum = flow_parameters->getKineticEnergySpectrum((double)k_x, (double)k_y, U, V, mesh);
-				output->saveKineticEnergySpectrum(namefile_spectrum.str().c_str(), E_spectrum, (double)k_x, (double)k_y);
-			}
+		//if((step % n_save_flow_parameters) == 0 || step == 1)
+		//{
+			//std::stringstream namefile_spectrum;
+			//double* E_k;
 
-			delete flow_parameters;
-		}*/
+			//namefile_spectrum << "flow_spectrum_" << time << ".dat";
+			//E_k = flow_parameters->getKineticEnergySpectrum(U, V);
+			//for(int k = 0; k < flow_parameters->k_max(); k++)
+			//{
+			//	output->saveKineticEnergySpectrum(namefile_spectrum.str().c_str(), E_k[k], k + 1);
+			//}
+		//}
+		output->saveData("flow_energy_power.dat", flow_parameters->getEnergyPower(U, R, G, k), time);
+		output->saveData("flow_enstrophy_power.dat", flow_parameters->getEnstrophyPower(U, V, R, G, k), time);
 	}
 
 	delete bound;
 	delete output;
+	delete flow_parameters;
 
 	for(size_t i = 0; i < 2; i++)
 		for(size_t j = 0; j < num_cells[0] + 1; j++)
@@ -585,12 +593,10 @@ void CSolvers::solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* 
 		delete []U[i];
 		delete []V[i];
 		delete []P[i];
-		delete []S[i];
 	}
 	delete []U;
 	delete []V;
 	delete []P;
-	delete []S;
 }
 
 double CSolvers::getTimeIncrement(double** R, double** U, double** V, double** P, CMeshGenerator* mesh)

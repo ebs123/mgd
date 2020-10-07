@@ -8,14 +8,21 @@ COutput::~COutput(void)
 {
 }
 
-void COutput::save2dPlot(const char* namefile, CMeshGenerator* mesh, double time, double** R, double** U, double** V, double** P, double** S)
+void COutput::save2dPlot(const char* namefile, CMeshGenerator* mesh, double time, double** R, double** U, double** V, double** P, double** S, double** S_diff)
 {
 	FILE *file;
 
 	file = fopen(namefile, "w");
 	fprintf(file, "%s %lf %s\n", "TITLE = \"", time, "\"");
-	fprintf(file, "%s\n", "variables= \"x\", \"y\", \"R\", \"U\", \"V\", \"P\", \"S\"");
-	fprintf(file, "%s %d %s %d %s\n", "ZONE T= \"\", I=", mesh->getNumCells()[0], ", J=", mesh->getNumCells()[1], ", F=POINT");
+	if(S_diff != NULL)
+	{
+		fprintf(file, "%s\n", "variables= \"x\", \"y\", \"R\", \"U\", \"V\", \"P\", \"S\", \"S_diff\"");
+	}
+	else
+	{
+		fprintf(file, "%s\n", "variables= \"x\", \"y\", \"R\", \"U\", \"V\", \"P\", \"S\"");
+	}
+	fprintf(file, "%s %d %s %d %s\n", "ZONE T= \"\", I=", mesh->getNumCells()[1], ", J=", mesh->getNumCells()[0], ", F=POINT");
 
 	double *x = mesh->getMeshComponent(0);
 	double *y = mesh->getMeshComponent(1);
@@ -23,7 +30,14 @@ void COutput::save2dPlot(const char* namefile, CMeshGenerator* mesh, double time
 	for(int i = 0; i < mesh->getNumCells()[0]; i++)
 		for(int j = 0; j < mesh->getNumCells()[1]; j++)
 		{
-			fprintf(file, "%lf %lf %lf %lf %lf %lf %lf\n", x[i], y[j], R[i][j], U[i][j], V[i][j], P[i][j], S[i][j]);
+			if(S_diff != NULL)
+			{
+				fprintf(file, "%lf %lf %lf %lf %lf %lf %lf %lf\n", x[i], y[j], R[i][j], U[i][j], V[i][j], P[i][j], S[i][j], S_diff[i][j]);
+			}
+			else
+			{
+				fprintf(file, "%lf %lf %lf %lf %lf %lf %lf\n", x[i], y[j], R[i][j], U[i][j], V[i][j], P[i][j], S[i][j]);
+			}
 		}
 
 	fclose(file);
@@ -93,12 +107,22 @@ void COutput::saveKineticEnergyAndEnstrophy(const char* namefile, CMeshGenerator
 	fclose(file);
 }
 
-void COutput::saveKineticEnergySpectrum(const char* namefile, double E_spectrum, double k_x, double k_y)
+void COutput::saveKineticEnergySpectrum(const char* namefile, double E, int k)
 {
 	FILE *file;
 	file = fopen(namefile, "a+");
 
-	fprintf(file, "%lf %lf\n", E_spectrum, sqrt(k_x * k_x + k_y * k_y));
+	fprintf(file, "%lf %d\n", E, k);
+
+	fclose(file);
+}
+
+void COutput::saveData(const char* namefile, double data1, double data2)
+{
+	FILE *file;
+	file = fopen(namefile, "a+");
+
+	fprintf(file, "%lf %lf\n", data1, data2);
 
 	fclose(file);
 }

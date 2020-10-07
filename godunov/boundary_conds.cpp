@@ -8,18 +8,21 @@ CBoundaryConds::CBoundaryConds(boundaryType _x_bound_type, boundaryType _y_bound
 
 CBoundaryConds::~CBoundaryConds(void)
 {
-	for(int i = 0; i < 4; i++)
-		for(int j = 0; j < m_mesh_size_x + 4; j++)
+	if(flow_data_dummy != 0)
+	{
+		for(int i = 0; i < 4; i++)
+			for(int j = 0; j < m_mesh_size_x + 4; j++)
+			{
+				delete[] flow_data_dummy[i][j];
+			}
+
+		for(int i = 0; i < 4; i++)
 		{
-			delete[] flow_data_dummy[i][j];
+			delete[] flow_data_dummy[i];
 		}
 
-	for(int i = 0; i < 4; i++)
-	{
-		delete[] flow_data_dummy[i];
+		delete[] flow_data_dummy;
 	}
-
-	delete[] flow_data_dummy;
 }
 
 void CBoundaryConds::boundary_flows(double **R, double **U, double **V, double **P, double*** dss, double*** uss, double*** vss, 
@@ -29,16 +32,34 @@ void CBoundaryConds::boundary_flows(double **R, double **U, double **V, double *
 
 	for(int j = 0; j < numcells[1]; j++)
 	{
-		linear(R[0][j], -U[0][j], V[0][j], P[0][j], R[0][j], U[0][j], V[0][j], P[0][j], dss[0][0][j], uss[0][0][j], vss[0][0][j], pss[0][0][j], 'x');
-		linear(R[numcells[0] - 1][j], U[numcells[0] - 1][j], V[numcells[0] - 1][j], P[numcells[0] - 1][j], R[numcells[0] - 1][j], -U[numcells[0] - 1][j], 
-			V[numcells[0] - 1][j], P[numcells[0] - 1][j], dss[0][numcells[0]][j], uss[0][numcells[0]][j], vss[0][numcells[0]][j], pss[0][numcells[0]][j], 'x');
+		if(x_bound_type == SLIP)
+		{
+			linear(R[0][j], -U[0][j], V[0][j], P[0][j], R[0][j], U[0][j], V[0][j], P[0][j], dss[0][0][j], uss[0][0][j], vss[0][0][j], pss[0][0][j], 'x');
+			linear(R[numcells[0] - 1][j], U[numcells[0] - 1][j], V[numcells[0] - 1][j], P[numcells[0] - 1][j], R[numcells[0] - 1][j], -U[numcells[0] - 1][j], 
+				V[numcells[0] - 1][j], P[numcells[0] - 1][j], dss[0][numcells[0]][j], uss[0][numcells[0]][j], vss[0][numcells[0]][j], pss[0][numcells[0]][j], 'x');
+		}
+		else if(x_bound_type == OUTFLOW)
+		{
+			linear(R[0][j], U[0][j], V[0][j], P[0][j], R[0][j], U[0][j], V[0][j], P[0][j], dss[0][0][j], uss[0][0][j], vss[0][0][j], pss[0][0][j], 'x');
+			linear(R[numcells[0] - 1][j], U[numcells[0] - 1][j], V[numcells[0] - 1][j], P[numcells[0] - 1][j], R[numcells[0] - 1][j], U[numcells[0] - 1][j], 
+				V[numcells[0] - 1][j], P[numcells[0] - 1][j], dss[0][numcells[0]][j], uss[0][numcells[0]][j], vss[0][numcells[0]][j], pss[0][numcells[0]][j], 'x');
+		}
 	}
 
 	for(int i = 0; i < numcells[0]; i++)
 	{
-		linear(R[i][0], U[i][0], -V[i][0], P[i][0], R[i][0], U[i][0], V[i][0], P[i][0], dss[1][i][0], uss[1][i][0], vss[1][i][0], pss[1][i][0], 'y');
-		linear(R[i][numcells[1] - 1], U[i][numcells[1] - 1], V[i][numcells[1] - 1], P[i][numcells[1] - 1], R[i][numcells[1] - 1], U[i][numcells[1] - 1], 
-			-V[i][numcells[1] - 1], P[i][numcells[1] - 1], dss[1][i][numcells[1]], uss[1][i][numcells[1]], vss[1][i][numcells[1]], pss[1][i][numcells[1]], 'y');
+		if(y_bound_type == SLIP)
+		{
+			linear(R[i][0], U[i][0], -V[i][0], P[i][0], R[i][0], U[i][0], V[i][0], P[i][0], dss[1][i][0], uss[1][i][0], vss[1][i][0], pss[1][i][0], 'y');
+			linear(R[i][numcells[1] - 1], U[i][numcells[1] - 1], V[i][numcells[1] - 1], P[i][numcells[1] - 1], R[i][numcells[1] - 1], U[i][numcells[1] - 1], 
+				-V[i][numcells[1] - 1], P[i][numcells[1] - 1], dss[1][i][numcells[1]], uss[1][i][numcells[1]], vss[1][i][numcells[1]], pss[1][i][numcells[1]], 'y');
+		}
+		else if(y_bound_type == OUTFLOW)
+		{
+			linear(R[i][0], U[i][0], V[i][0], P[i][0], R[i][0], U[i][0], V[i][0], P[i][0], dss[1][i][0], uss[1][i][0], vss[1][i][0], pss[1][i][0], 'y');
+			linear(R[i][numcells[1] - 1], U[i][numcells[1] - 1], V[i][numcells[1] - 1], P[i][numcells[1] - 1], R[i][numcells[1] - 1], U[i][numcells[1] - 1], 
+				V[i][numcells[1] - 1], P[i][numcells[1] - 1], dss[1][i][numcells[1]], uss[1][i][numcells[1]], vss[1][i][numcells[1]], pss[1][i][numcells[1]], 'y');
+		}
 	}
 }
 //direction == 'x' or 'y'
@@ -170,23 +191,45 @@ double*** CBoundaryConds::getFlowDataWithDummy(double **R, double **U, double **
 		}
 		else if(x_bound_type == PERIODIC)
 		{
+			flow_data_dummy[0][0][j + 2] = R[mesh_size_x - 2][j];
+			flow_data_dummy[1][0][j + 2] = U[mesh_size_x - 2][j];
+			flow_data_dummy[2][0][j + 2] = V[mesh_size_x - 2][j];
+			flow_data_dummy[3][0][j + 2] = P[mesh_size_x - 2][j];
+
+			flow_data_dummy[0][1][j + 2] = R[mesh_size_x - 1][j];
+			flow_data_dummy[1][1][j + 2] = U[mesh_size_x - 1][j];
+			flow_data_dummy[2][1][j + 2] = V[mesh_size_x - 1][j];
+			flow_data_dummy[3][1][j + 2] = P[mesh_size_x - 1][j];
+
+			flow_data_dummy[0][mesh_size_x + 2][j + 2] = R[0][j];
+			flow_data_dummy[1][mesh_size_x + 2][j + 2] = U[0][j];
+			flow_data_dummy[2][mesh_size_x + 2][j + 2] = V[0][j];
+			flow_data_dummy[3][mesh_size_x + 2][j + 2] = P[0][j];
+
+			flow_data_dummy[0][mesh_size_x + 3][j + 2] = R[1][j];
+			flow_data_dummy[1][mesh_size_x + 3][j + 2] = U[1][j];
+			flow_data_dummy[2][mesh_size_x + 3][j + 2] = V[1][j];
+			flow_data_dummy[3][mesh_size_x + 3][j + 2] = P[1][j];
+		}
+		else if(x_bound_type == SLIP)
+		{
 			flow_data_dummy[0][0][j + 2] = R[1][j];
-			flow_data_dummy[1][0][j + 2] = U[1][j];
+			flow_data_dummy[1][0][j + 2] = - U[1][j];
 			flow_data_dummy[2][0][j + 2] = V[1][j];
 			flow_data_dummy[3][0][j + 2] = P[1][j];
 
 			flow_data_dummy[0][1][j + 2] = R[0][j];
-			flow_data_dummy[1][1][j + 2] = U[0][j];
+			flow_data_dummy[1][1][j + 2] = - U[0][j];
 			flow_data_dummy[2][1][j + 2] = V[0][j];
 			flow_data_dummy[3][1][j + 2] = P[0][j];
 
 			flow_data_dummy[0][mesh_size_x + 2][j + 2] = R[mesh_size_x - 1][j];
-			flow_data_dummy[1][mesh_size_x + 2][j + 2] = U[mesh_size_x - 1][j];
+			flow_data_dummy[1][mesh_size_x + 2][j + 2] = - U[mesh_size_x - 1][j];
 			flow_data_dummy[2][mesh_size_x + 2][j + 2] = V[mesh_size_x - 1][j];
 			flow_data_dummy[3][mesh_size_x + 2][j + 2] = P[mesh_size_x - 1][j];
 
 			flow_data_dummy[0][mesh_size_x + 3][j + 2] = R[mesh_size_x - 2][j];
-			flow_data_dummy[1][mesh_size_x + 3][j + 2] = U[mesh_size_x - 2][j];
+			flow_data_dummy[1][mesh_size_x + 3][j + 2] = - U[mesh_size_x - 2][j];
 			flow_data_dummy[2][mesh_size_x + 3][j + 2] = V[mesh_size_x - 2][j];
 			flow_data_dummy[3][mesh_size_x + 3][j + 2] = P[mesh_size_x - 2][j];
 		}
@@ -238,7 +281,133 @@ double*** CBoundaryConds::getFlowDataWithDummy(double **R, double **U, double **
 			flow_data_dummy[2][i + 2][mesh_size_y + 3] = V[i][mesh_size_y - 2];
 			flow_data_dummy[3][i + 2][mesh_size_y + 3] = P[i][mesh_size_y - 2];
 		}
+		else if(y_bound_type == SLIP)
+		{
+			flow_data_dummy[0][i + 2][0] = R[i][1];
+			flow_data_dummy[1][i + 2][0] = U[i][1];
+			flow_data_dummy[2][i + 2][0] = - V[i][1];
+			flow_data_dummy[3][i + 2][0] = P[i][1];
+
+			flow_data_dummy[0][i + 2][1] = R[i][0];
+			flow_data_dummy[1][i + 2][1] = U[i][0];
+			flow_data_dummy[2][i + 2][1] = - V[i][0];
+			flow_data_dummy[3][i + 2][1] = P[i][0];
+
+			flow_data_dummy[0][i + 2][mesh_size_y + 2] = R[i][mesh_size_y - 1];
+			flow_data_dummy[1][i + 2][mesh_size_y + 2] = U[i][mesh_size_y - 1];
+			flow_data_dummy[2][i + 2][mesh_size_y + 2] = - V[i][mesh_size_y - 1];
+			flow_data_dummy[3][i + 2][mesh_size_y + 2] = P[i][mesh_size_y - 1];
+
+			flow_data_dummy[0][i + 2][mesh_size_y + 3] = R[i][mesh_size_y - 2];
+			flow_data_dummy[1][i + 2][mesh_size_y + 3] = U[i][mesh_size_y - 2];
+			flow_data_dummy[2][i + 2][mesh_size_y + 3] = - V[i][mesh_size_y - 2];
+			flow_data_dummy[3][i + 2][mesh_size_y + 3] = P[i][mesh_size_y - 2];
+		}
 	}
+	//left down
+	for(int i = 0; i < 2; i++)
+		for(int j = 0; j < 2; j++)
+		{
+			if(y_bound_type == OUTFLOW)
+			{
+				flow_data_dummy[0][i][j] = flow_data_dummy[0][i][3];
+				flow_data_dummy[1][i][j] = flow_data_dummy[1][i][3];
+				flow_data_dummy[2][i][j] = flow_data_dummy[2][i][3];
+				flow_data_dummy[3][i][j] = flow_data_dummy[3][i][3];
+			}
+			else if(y_bound_type == SLIP)
+			{
+				flow_data_dummy[0][i][j] = flow_data_dummy[0][i][3 - j];
+				flow_data_dummy[1][i][j] = flow_data_dummy[1][i][3 - j];
+				flow_data_dummy[2][i][j] = - flow_data_dummy[2][i][3 - j];
+				flow_data_dummy[3][i][j] = flow_data_dummy[3][i][3 - j];
+			}
+			else if(y_bound_type == PERIODIC)
+			{
+				flow_data_dummy[0][i][j] = flow_data_dummy[0][i][mesh_size_y + 1 - j];
+				flow_data_dummy[1][i][j] = flow_data_dummy[1][i][mesh_size_y + 1 - j];
+				flow_data_dummy[2][i][j] = flow_data_dummy[2][i][mesh_size_y + 1 - j];
+				flow_data_dummy[3][i][j] = flow_data_dummy[3][i][mesh_size_y + 1 - j];
+			}
+		}
+	//left up
+	for(int i = 0; i < 2; i++)
+		for(int j = mesh_size_y + 2; j < mesh_size_y + 4; j++)
+		{
+			if(y_bound_type == OUTFLOW)
+			{
+				flow_data_dummy[0][i][j] = flow_data_dummy[0][i][mesh_size_y + 1];
+				flow_data_dummy[1][i][j] = flow_data_dummy[1][i][mesh_size_y + 1];
+				flow_data_dummy[2][i][j] = flow_data_dummy[2][i][mesh_size_y + 1];
+				flow_data_dummy[3][i][j] = flow_data_dummy[3][i][mesh_size_y + 1];
+			}
+			else if(y_bound_type == SLIP)
+			{
+				flow_data_dummy[0][i][j] = flow_data_dummy[0][i][2 * mesh_size_y - j + 3];
+				flow_data_dummy[1][i][j] = flow_data_dummy[1][i][2 * mesh_size_y - j + 3];
+				flow_data_dummy[2][i][j] = - flow_data_dummy[2][i][2 * mesh_size_y - j + 3];
+				flow_data_dummy[3][i][j] = flow_data_dummy[3][i][2 * mesh_size_y - j + 3];
+			}
+			else if(y_bound_type == PERIODIC)
+			{
+				flow_data_dummy[0][i][j] = flow_data_dummy[0][i][j - mesh_size_y];
+				flow_data_dummy[1][i][j] = flow_data_dummy[1][i][j - mesh_size_y];
+				flow_data_dummy[2][i][j] = flow_data_dummy[2][i][j - mesh_size_y];
+				flow_data_dummy[3][i][j] = flow_data_dummy[3][i][j - mesh_size_y];
+			}
+		}
+	//right up
+	for(int i = mesh_size_x + 2; i < mesh_size_x + 4; i++)
+		for(int j = mesh_size_y + 2; j < mesh_size_y + 4; j++)
+		{
+			if(y_bound_type == OUTFLOW)
+			{
+				flow_data_dummy[0][i][j] = flow_data_dummy[0][i][mesh_size_y + 1];
+				flow_data_dummy[1][i][j] = flow_data_dummy[1][i][mesh_size_y + 1];
+				flow_data_dummy[2][i][j] = flow_data_dummy[2][i][mesh_size_y + 1];
+				flow_data_dummy[3][i][j] = flow_data_dummy[3][i][mesh_size_y + 1];
+			}
+			else if(y_bound_type == SLIP)
+			{
+				flow_data_dummy[0][i][j] = flow_data_dummy[0][i][2 * mesh_size_y - j + 3];
+				flow_data_dummy[1][i][j] = flow_data_dummy[1][i][2 * mesh_size_y - j + 3];
+				flow_data_dummy[2][i][j] = - flow_data_dummy[2][i][2 * mesh_size_y - j + 3];
+				flow_data_dummy[3][i][j] = flow_data_dummy[3][i][2 * mesh_size_y - j + 3];
+			}
+			else if(y_bound_type == PERIODIC)
+			{
+				flow_data_dummy[0][i][j] = flow_data_dummy[0][i][j - mesh_size_y];
+				flow_data_dummy[1][i][j] = flow_data_dummy[1][i][j - mesh_size_y];
+				flow_data_dummy[2][i][j] = flow_data_dummy[2][i][j - mesh_size_y];
+				flow_data_dummy[3][i][j] = flow_data_dummy[3][i][j - mesh_size_y];
+			}
+		}
+	//right down
+	for(int i = mesh_size_x + 2; i < mesh_size_x + 4; i++)
+		for(int j = 0; j < 2; j++)
+		{
+			if(y_bound_type == OUTFLOW)
+			{
+				flow_data_dummy[0][i][j] = flow_data_dummy[0][i][3];
+				flow_data_dummy[1][i][j] = flow_data_dummy[1][i][3];
+				flow_data_dummy[2][i][j] = flow_data_dummy[2][i][3];
+				flow_data_dummy[3][i][j] = flow_data_dummy[3][i][3];
+			}
+			else if(y_bound_type == SLIP)
+			{
+				flow_data_dummy[0][i][j] = flow_data_dummy[0][i][3 - j];
+				flow_data_dummy[1][i][j] = flow_data_dummy[1][i][3 - j];
+				flow_data_dummy[2][i][j] = - flow_data_dummy[2][i][3 - j];
+				flow_data_dummy[3][i][j] = flow_data_dummy[3][i][3 - j];
+			}
+			else if(y_bound_type == PERIODIC)
+			{
+				flow_data_dummy[0][i][j] = flow_data_dummy[0][i][mesh_size_y + 1 - j];
+				flow_data_dummy[1][i][j] = flow_data_dummy[1][i][mesh_size_y + 1 - j];
+				flow_data_dummy[2][i][j] = flow_data_dummy[2][i][mesh_size_y + 1 - j];
+				flow_data_dummy[3][i][j] = flow_data_dummy[3][i][mesh_size_y + 1 - j];
+			}
+		}
 
 	return flow_data_dummy;
 }

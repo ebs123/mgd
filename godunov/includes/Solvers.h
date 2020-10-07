@@ -16,7 +16,7 @@ public:
 	void linearSolver(int* numcells, double** R, double** U, double** V, double** P, double*** dss, double*** uss, 
 							 double*** vss, double*** pss);
 	double getTimeIncrement(double** R, double** U, double** V, double** P, CMeshGenerator* mesh);
-	void solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* mesh);
+	void solve(double*** V_init, int n_steps, int n_save, CMeshGenerator* mesh, boundaryType x_bound_type, boundaryType y_bound_type);
 	void getGradientsOfFlowData(double*** flow_data_dummy, double*** flow_data);
 
 	//*_with_dummy_reconstr - first index start from 0 (left border) to 4 (bottom border) by clockwise bypass
@@ -30,7 +30,7 @@ public:
 							  double*** R_limiter, double*** U_limiter, double*** V_limiter, double*** P_limiter, 
 							  CMeshGenerator* mesh);
 	void getCellsFlowsSecondOrder(int* numcells, CMeshGenerator* mesh, double** R, double** U, double** V, double** P, double*** dss, double*** uss, 
-							 double*** vss, double*** pss);
+							 double*** vss, double*** pss, boundaryType x_bound_type, boundaryType y_bound_type);
 
 	~CSolvers(void);
 };
